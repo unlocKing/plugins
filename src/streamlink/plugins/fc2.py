@@ -17,7 +17,6 @@ from streamlink.plugin.api import http
 from streamlink.plugin.api import useragents
 from streamlink.plugin.api import validate
 from streamlink.stream import RTMPStream
-from streamlink.utils import filter_urlquery
 
 
 class FC2(Plugin):
@@ -184,12 +183,8 @@ class FC2(Plugin):
         if w_data['status'] == 11:
             raise PluginError('The broadcaster is currently not available')
 
-        new_dict = {
-            'control_token': w_data['control_token'],
-            'mode': 'pay',
-            'comment': '0',
-        }
-        ws_url = filter_urlquery(w_data['url'], new_dict=new_dict)
+        ws_url = '{0}?control_token={1}&mode=pay&comment=0'.format(
+            w_data['url'], w_data['control_token'])
         self.logger.debug('WS URL: {0}'.format(ws_url))
         return ws_url
 
@@ -253,8 +248,8 @@ class FC2(Plugin):
     def _get_rtmp(self, data):
         self.logger.debug('_get_rtmp ...')
 
-        app = filter_urlquery(data['application'],
-                              new_dict={'media_token': data['media_token']})
+        app = '{0}?media_token={1}'.format(
+            data['application'], data['media_token'])
         host = data['host']
 
         params = {
