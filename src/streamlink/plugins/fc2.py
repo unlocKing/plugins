@@ -1,35 +1,28 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 import re
-import time
 
 from datetime import datetime
-from threading import Thread
-from threading import Timer
+from requests.utils import dict_from_cookiejar
+from threading import Thread, Timer
 from websocket import create_connection
 
-from streamlink.cache import Cache
 from streamlink.exceptions import PluginError
-from streamlink.plugin import Plugin
-from streamlink.plugin import PluginArgument
-from streamlink.plugin import PluginArguments
-from streamlink.plugin.api import http
-from streamlink.plugin.api import useragents
-from streamlink.plugin.api import validate
+from streamlink.plugin import Plugin, PluginArgument, PluginArguments
+from streamlink.plugin.api import http, useragents, validate
 from streamlink.stream import RTMPStream
+
+log = logging.getLogger(__name__)
 
 
 class FC2(Plugin):
-    '''Plugin for live.fc2.com'''
 
     url_login = 'https://secure.id.fc2.com/?mode=login&switch_language=en'
     url_member_api = 'https://live.fc2.com/api/memberApi.php'
     url_server = 'https://live.fc2.com/api/getControlServer.php'
 
     _url_re = re.compile(r'''https?://live\.fc2\.com/(?P<user_id>\d+)/?$''')
-
-    count = 0
-    count_ping = 0
 
     _version_schema = validate.Schema({
         'status': int,
@@ -54,10 +47,11 @@ class FC2(Plugin):
         }
     })
 
+    count = 0
+    count_ping = 0
+
     host_data = ''
     host_found = False
-
-    expires_time = 3600 * 24
 
     arguments = PluginArguments(
         PluginArgument(
@@ -83,29 +77,13 @@ class FC2(Plugin):
         )
     )
 
-    def __init__(self, url):
-        super(FC2, self).__init__(url)
-        self._session_attributes = Cache(filename='plugin-cache.json', key_prefix='fc2:attributes')
-        self._authed = (self._session_attributes.get('fcu')
-                        and self._session_attributes.get('fgcv')
-                        and self._session_attributes.get('FCSID')
-                        and self._session_attributes.get('login_status')
-                        and self._session_attributes.get('glgd_val')
-                        and self._session_attributes.get('PHPSESSID')
-                        and self._session_attributes.get('secure_check_fc2'))
-        self._expires = self._session_attributes.get('expires', time.time() + self.expires_time)
-
     @classmethod
     def can_handle_url(cls, url):
         return cls._url_re.match(url)
 
-    def set_expires_time_cache(self):
-        expires = time.time() + self.expires_time
-        self._session_attributes.set('expires', expires, expires=self.expires_time)
-
     def _login(self, username, password):
         '''login and update cached cookies'''
-        self.logger.debug('login ...')
+        log.debug('login ...')
         http.get(self.url)
         data = {
             'pass': password,
@@ -115,23 +93,9 @@ class FC2(Plugin):
         }
 
         http.post(self.url_login, data=data, allow_redirects=True)
-        for cookie in http.cookies:
-            self._session_attributes.set(cookie.name, cookie.value, expires=3600 * 24)
+        cookies_list = self.save_cookies()
 
-        if (self._session_attributes.get('fcu')
-           and self._session_attributes.get('fgcv')
-           and self._session_attributes.get('FCSID')
-           and self._session_attributes.get('login_status')
-           and self._session_attributes.get('glgd_val')
-           and self._session_attributes.get('PHPSESSID')
-           and self._session_attributes.get('secure_check_fc2')):
-
-            self.logger.debug('New session data')
-            self.set_expires_time_cache()
-            return True
-        else:
-            self.logger.error('Failed to login, check your username/password')
-            return False
+        return self.cmp_cookies_list(cookies_list)
 
     def _get_version(self, user_id):
         data = {
@@ -149,12 +113,12 @@ class FC2(Plugin):
             raise PluginError('A login is required for this stream.')
 
         if channel_data['fee'] != 0:
-            raise PluginError('Only streams without a fee are supported by streamlink.')
+            raise PluginError('Only streams without a fee are supported.')
 
         version = channel_data['version']
         if user_data['is_login']:
-            self.logger.info('Logged in as {0}'.format(user_data['name']))
-        self.logger.debug('Found version: {0}'.format(version))
+            log.info('Logged in as {0}'.format(user_data['name']))
+        log.debug('Found version: {0}'.format(version))
         return version
 
     def payload_msg(self, name):
@@ -170,7 +134,7 @@ class FC2(Plugin):
         return payload
 
     def _get_ws_url(self, user_id, version):
-        self.logger.debug('_get_ws_url ...')
+        log.debug('_get_ws_url ...')
         data = {
             'channel_id': user_id,
             'channel_version': version,
@@ -185,11 +149,11 @@ class FC2(Plugin):
 
         ws_url = '{0}?control_token={1}&mode=pay&comment=0'.format(
             w_data['url'], w_data['control_token'])
-        self.logger.debug('WS URL: {0}'.format(ws_url))
+        log.debug('WS URL: {0}'.format(ws_url))
         return ws_url
 
     def _get_ws_data(self, ws_url):
-        self.logger.debug('_get_ws_data ...')
+        log.debug('_get_ws_data ...')
         ws = create_connection(ws_url)
         ws.send(self.payload_msg('get_media_server_information'))
 
@@ -207,22 +171,26 @@ class FC2(Plugin):
                 self.count += 1
                 data = json.loads(ws.recv())
                 time_utc = datetime.utcnow().strftime('%H:%M:%S UTC')
-                if data['name'] not in ['comment', 'ng_commentq', 'user_count', 'ng_comment']:
-                    self.logger.debug('{0} - {1} - {2}'.format(time_utc, self.count, data['name']))
+                if data['name'] not in ['comment', 'ng_commentq',
+                                        'user_count', 'ng_comment']:
+                    log.debug('{0} - {1} - {2}'.format(
+                        time_utc, self.count, data['name']))
 
-                if data['name'] == '_response_' and data['arguments'].get('host'):
-                    self.logger.debug('Found host data')
+                if (data['name'] == '_response_'
+                        and data['arguments'].get('host')):
+                    log.debug('Found host data')
                     self.host_data = data
                     self.host_found = True
                 elif data['name'] == 'media_connection':
-                    self.logger.debug('successfully opened stream')
+                    log.debug('successfully opened stream')
                 elif data['name'] == 'control_disconnection':
                     break
                 elif data['name'] == 'publish_stop':
-                    self.logger.debug('Stream ended')
+                    log.debug('Stream ended')
                 elif data['name'] == 'channel_information':
                     if data['arguments'].get('fee') != 0:
-                        self.logger.error('Stream requires a fee now, this is not supported by streamlink.'.format(data['arguments'].get('fee')))
+                        log.error('Stream requires a fee now.'.format(
+                            data['arguments'].get('fee')))
                         break
 
             ws.close()
@@ -246,7 +214,7 @@ class FC2(Plugin):
         return True
 
     def _get_rtmp(self, data):
-        self.logger.debug('_get_rtmp ...')
+        log.debug('_get_rtmp ...')
 
         app = '{0}?media_token={1}'.format(
             data['application'], data['media_token'])
@@ -264,46 +232,44 @@ class FC2(Plugin):
         }
         yield 'live', RTMPStream(self.session, params)
 
+    def cmp_cookies_list(self, cookies_list):
+        required_cookies = [
+            'FCSID', 'fcu', 'fgcv', 'glgd_val',
+            'login_status', 'PHPSESSID', 'secure_check_fc2',
+        ]
+        count = 0
+        for c in required_cookies:
+            if c in cookies_list:
+                count += 1
+        log.debug('Same Cookies: {0}'.format(count))
+        return (count == len(required_cookies))
+
     def _get_streams(self):
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
+
+        if self.options.get('purge_credentials'):
+            self.clear_cookies()
+            log.info('All credentials were successfully removed.')
+
         http.headers.update({
             'User-Agent': useragents.FIREFOX,
             'Referer': self.url
         })
 
+        cookies_list = []
+        for k in dict_from_cookiejar(http.cookies):
+            cookies_list.append(k)
+        _authed = self.cmp_cookies_list(cookies_list)
+
         login_username = self.get_option('username')
         login_password = self.get_option('password')
 
-        if self.options.get('purge_credentials'):
-            self._session_attributes.set('fcu', None, expires=0)
-            self._session_attributes.set('fgcv', None, expires=0)
-            self._session_attributes.set('FCSID', None, expires=0)
-            self._session_attributes.set('login_status', None, expires=0)
-            self._session_attributes.set('glgd_val', None, expires=0)
-            self._session_attributes.set('PHPSESSID', None, expires=0)
-            self._session_attributes.set('secure_check_fc2', None, expires=0)
-            self._authed = False
-            self.logger.info('All credentials were successfully removed.')
-
-        if self._authed:
-            if self._expires < time.time():
-                self.logger.debug('get new cached cookies')
-                # login after 24h
-                self.set_expires_time_cache()
-                self._authed = False
-            else:
-                self.logger.info('Attempting to authenticate using cached cookies')
-                http.cookies.set('fcu', self._session_attributes.get('fcu'))
-                http.cookies.set('fgcv', self._session_attributes.get('fgcv'))
-                http.cookies.set('FCSID', self._session_attributes.get('FCSID'))
-                http.cookies.set('login_status', self._session_attributes.get('login_status'))
-                http.cookies.set('glgd_val', self._session_attributes.get('glgd_val'))
-                http.cookies.set('PHPSESSID', self._session_attributes.get('PHPSESSID'))
-                http.cookies.set('secure_check_fc2', self._session_attributes.get('secure_check_fc2'))
-
-        if (not self._authed and login_username and login_password):
-            self._login(login_username, login_password)
+        if _authed:
+            log.info('Attempting to authenticate using cached cookies')
+        elif (not _authed and login_username and login_password):
+            if not self._login(login_username, login_password):
+                log.error('Failed to login, check your username/password')
 
         match = self._url_re.match(self.url)
         if not match:
