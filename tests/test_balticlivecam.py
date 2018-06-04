@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.balticlivecam import BalticLivecam
+from ..src.streamlink.plugins.balticlivecam import BalticLivecam
 
 
 class TestPluginBalticLivecam(unittest.TestCase):
