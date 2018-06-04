@@ -7,6 +7,7 @@ from streamlink.compat import unquote
 from streamlink.exceptions import NoStreamsError
 from streamlink.plugin import Plugin
 from streamlink.plugin.api import http
+from streamlink.plugin.api import useragents
 from streamlink.stream import HLSStream
 
 from websocket import create_connection
@@ -178,6 +179,7 @@ class MyFreeCams(Plugin):
         return chat_servers, h5video_servers
 
     def _get_streams(self):
+        http.headers.update({'User-Agent': useragents.FIREFOX})
         self.logger.info('This is a custom plugin. '
                          'For support visit https://github.com/back-to/plugins')
         match = self._url_re.match(self.url)

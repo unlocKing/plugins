@@ -3,6 +3,7 @@ import re
 from streamlink import PluginError
 from streamlink.plugin import Plugin
 from streamlink.plugin.api import http
+from streamlink.plugin.api import useragents
 from streamlink.stream import HLSStream
 
 
@@ -19,6 +20,7 @@ class Plexstorm(Plugin):
         return cls._url_re.match(url) is not None
 
     def _get_streams(self):
+        http.headers.update({'User-Agent': useragents.FIREFOX})
         self.logger.info('This is a custom plugin. '
                          'For support visit https://github.com/back-to/plugins')
         res = http.get(self.url)

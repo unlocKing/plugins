@@ -6,6 +6,7 @@ from datetime import datetime
 from streamlink import PluginError
 from streamlink.plugin import Plugin
 from streamlink.plugin.api import http
+from streamlink.plugin.api import useragents
 from streamlink.plugin.api import validate
 from streamlink.stream import HLSStream
 from streamlink.utils import parse_json
@@ -29,6 +30,7 @@ class ovvaTV(Plugin):
         return cls.url_re.match(url) is not None
 
     def _get_streams(self):
+        http.headers.update({'User-Agent': useragents.FIREFOX})
         self.logger.info('This is a custom plugin. '
                          'For support visit https://github.com/back-to/plugins')
         res = http.get(self.url)
