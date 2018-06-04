@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import re
 
 from streamlink import NoPluginError
@@ -39,6 +40,8 @@ _playlist_re = re.compile(r'''
 
 # Regex for rtmp
 _rtmp_re = re.compile(r'''["'](?P<url>rtmp(?:e|s|t|te)?://[^"']+)["']''')
+
+log = logging.getLogger(__name__)
 
 
 def comma_list(values):
@@ -355,7 +358,7 @@ class Resolve(Plugin):
                     break
 
             if REMOVE is True:
-                self.logger.debug('{0} - Removed: {1}'.format(status_remove[count - 1], new_url))
+                log.debug('{0} - Removed: {1}'.format(status_remove[count - 1], new_url))
                 continue
             # END - removal of unwanted urls
 
@@ -426,13 +429,13 @@ class Resolve(Plugin):
                     for s in streams:
                         yield s
                 except Exception as e:
-                    self.logger.error('Skipping hls_url - {0}'.format(str(e)))
+                    log.error('Skipping hls_url - {0}'.format(str(e)))
             elif parsed_url.path.endswith(('.f4m')):
                 try:
                     for s in HDSStream.parse_manifest(self.session, url).items():
                         yield s
                 except Exception as e:
-                    self.logger.error('Skipping hds_url - {0}'.format(str(e)))
+                    log.error('Skipping hds_url - {0}'.format(str(e)))
             elif parsed_url.path.endswith(('.mp3', '.mp4')):
                 try:
                     name = 'live'
@@ -441,12 +444,12 @@ class Resolve(Plugin):
                         name = '{0}k'.format(m.group('bitrate'))
                     yield name, HTTPStream(self.session, url)
                 except Exception as e:
-                    self.logger.error('Skipping http_url - {0}'.format(str(e)))
+                    log.error('Skipping http_url - {0}'.format(str(e)))
             elif parsed_url.path.endswith(('.mpd')):
                 try:
-                    self.logger.info('Found mpd: {0}'.format(url))
+                    log.info('Found mpd: {0}'.format(url))
                 except Exception as e:
-                    self.logger.error('Skipping mpd_url - {0}'.format(str(e)))
+                    log.error('Skipping mpd_url - {0}'.format(str(e)))
 
     def _res_text(self, url):
         '''Content of a website
@@ -468,23 +471,23 @@ class Resolve(Plugin):
                 }
                 res = http.get(url, headers=headers, allow_redirects=True)
             elif '403 Client Error' in str(e):
-                self.logger.error('Website Access Denied/Forbidden, you might be geo-blocked or other params are missing.')
+                log.error('Website Access Denied/Forbidden, you might be geo-blocked or other params are missing.')
                 raise NoStreamsError(self.url)
             elif '404 Client Error' in str(e):
-                self.logger.error('Website was not found, the link is broken or dead.')
+                log.error('Website was not found, the link is broken or dead.')
                 raise NoStreamsError(self.url)
             else:
                 raise e
 
         if res.history:
             for resp in res.history:
-                self.logger.debug('Redirect: {0} - {1}'.format(resp.status_code, resp.url))
-            self.logger.debug('URL: {0}'.format(res.url))
+                log.debug('Redirect: {0} - {1}'.format(resp.status_code, resp.url))
+            log.debug('URL: {0}'.format(res.url))
         return res.text
 
     def _get_streams(self):
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         '''Try to find streams on every website.
 
         Returns:
@@ -497,7 +500,7 @@ class Resolve(Plugin):
         new_session_url = False
 
         self.url = update_scheme('http://', self.url)
-        self.logger.debug('resolve.py - {0}'.format(self.url))
+        log.debug('resolve.py - {0}'.format(self.url))
 
         # GET website content
         o_res = self._res_text(self.url)
@@ -505,7 +508,7 @@ class Resolve(Plugin):
         # rtmp search, will only print the url.
         m_rtmp = _rtmp_re.search(o_res)
         if m_rtmp:
-            self.logger.info('Found RTMP: {0}'.format(m_rtmp.group('url')))
+            log.info('Found RTMP: {0}'.format(m_rtmp.group('url')))
 
         # Playlist URL
         playlist_all = _playlist_re.findall(o_res)
@@ -519,7 +522,7 @@ class Resolve(Plugin):
 
             playlist_list = self._make_url_list(playlist_all, self.url, url_type='playlist', stream_base=stream_base)
             if playlist_list:
-                self.logger.debug('Found URL: {0}'.format(', '.join(playlist_list)))
+                log.debug('Found URL: {0}'.format(', '.join(playlist_list)))
                 return self._resolve_playlist(playlist_list)
 
         # iFrame URL
@@ -534,7 +537,7 @@ class Resolve(Plugin):
             # repair and filter iframe url list
             new_iframe_list = self._make_url_list(iframe_list, self.url, url_type='iframe')
             if new_iframe_list:
-                self.logger.info('Found iframes: {0}'.format(', '.join(new_iframe_list)))
+                log.info('Found iframes: {0}'.format(', '.join(new_iframe_list)))
                 new_session_url = new_iframe_list[0]
 
         if not new_session_url:

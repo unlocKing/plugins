@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 import re
 import uuid
@@ -11,6 +12,8 @@ from streamlink.plugin.api import useragents
 from streamlink.stream import HLSStream
 
 from websocket import create_connection
+
+log = logging.getLogger(__name__)
 
 
 class MyFreeCams(Plugin):
@@ -51,7 +54,7 @@ class MyFreeCams(Plugin):
         Returns:
             message: data to create a video url.
         '''
-        self.logger.debug('Trying to use php fallback')
+        log.debug('Trying to use php fallback')
         php_data = self._dict_re.search(php_message)
         if php_data is None:
             raise NoStreamsError(self.url)
@@ -117,13 +120,13 @@ class MyFreeCams(Plugin):
                 ws.send('hello fcserver\n\0')
                 r_id = str(uuid.uuid4().hex[0:32])
                 ws.send('1 0 0 20071025 0 {0}@guest:guest\n'.format(r_id))
-                self.logger.debug('Websocket server {0} connected'.format(xchat))
+                log.debug('Websocket server {0} connected'.format(xchat))
                 try_to_connect = 3
             except Exception:
                 try_to_connect = try_to_connect + 1
-                self.logger.debug('Failed to connect to WS server: {0} - try {1}'.format(xchat, try_to_connect))
+                log.debug('Failed to connect to WS server: {0} - try {1}'.format(xchat, try_to_connect))
                 if try_to_connect == 5:
-                    self.logger.error('can\'t connect to the websocket')
+                    log.error('can\'t connect to the websocket')
                     raise
 
         buff = ''
@@ -180,8 +183,8 @@ class MyFreeCams(Plugin):
 
     def _get_streams(self):
         http.headers.update({'User-Agent': useragents.FIREFOX})
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         match = self._url_re.match(self.url)
         username = match.group('username')
         user_id = match.group('user_id')
@@ -193,7 +196,7 @@ class MyFreeCams(Plugin):
         if user_id and not username:
             data = self._php_fallback(username, user_id, php_message)
         else:
-            self.logger.debug('Trying to use WebSocket data')
+            log.debug('Trying to use WebSocket data')
             data = self._dict_re.search(message)
             if data is None:
                 raise NoStreamsError(self.url)
@@ -203,15 +206,15 @@ class MyFreeCams(Plugin):
         ok_vs = [0, 90]
         if vs not in ok_vs:
             if vs is 2:
-                self.logger.info('Model is currently away')
+                log.info('Model is currently away')
             elif vs is 12:
-                self.logger.info('Model is currently in a private show')
+                log.info('Model is currently in a private show')
             elif vs is 13:
-                self.logger.info('Model is currently in a group show')
+                log.info('Model is currently in a group show')
             elif vs is 127:
-                self.logger.info('Model is currently offline')
+                log.info('Model is currently offline')
             else:
-                self.logger.error('Stream status: {0}'.format(vs))
+                log.error('Stream status: {0}'.format(vs))
             raise NoStreamsError(self.url)
 
         nm = data.get('nm')
@@ -225,12 +228,12 @@ class MyFreeCams(Plugin):
             camserver = fallback_data['u']['camserv']
             server = video_servers.get(str(camserver))
 
-        self.logger.info('Username: {0}'.format(nm))
-        self.logger.info('User ID:  {0}'.format(uid))
-        self.logger.debug('Video server: {0}'.format(server))
+        log.info('Username: {0}'.format(nm))
+        log.info('User ID:  {0}'.format(uid))
+        log.debug('Video server: {0}'.format(server))
         if server:
             hls_url = self.HLS_VIDEO_URL.format(server, uid_video)
-            self.logger.debug('HLS URL: {0}'.format(hls_url))
+            log.debug('HLS URL: {0}'.format(hls_url))
             for s in HLSStream.parse_variant_playlist(self.session, hls_url).items():
                 yield s
 

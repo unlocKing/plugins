@@ -1,9 +1,12 @@
+import logging
 import re
 
 from streamlink.plugin import Plugin
 from streamlink.plugin.api import http
 from streamlink.plugin.api import useragents
 from streamlink.stream import HLSStream
+
+log = logging.getLogger(__name__)
 
 
 class Inter(Plugin):
@@ -35,8 +38,8 @@ class Inter(Plugin):
         return cls._url_re.match(url)
 
     def _get_streams(self):
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         headers = {
             'Referer': self.url,
             'User-Agent': useragents.FIREFOX
@@ -55,7 +58,7 @@ class Inter(Plugin):
             hls_url = m.group('url')
 
         if hls_url is not None:
-            self.logger.debug('HLS URL: {0}'.format(hls_url))
+            log.debug('HLS URL: {0}'.format(hls_url))
             streams = HLSStream.parse_variant_playlist(self.session, hls_url, headers=headers)
             if not streams:
                 return {'live': HLSStream(self.session, hls_url, headers=headers)}

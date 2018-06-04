@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import re
 
 from streamlink.compat import unquote
@@ -18,6 +19,8 @@ except ImportError:
     # python 2.7
     from HTMLParser import HTMLParser
     compat_unescape = HTMLParser().unescape
+
+log = logging.getLogger(__name__)
 
 
 class OK_live(Plugin):
@@ -91,8 +94,8 @@ class OK_live(Plugin):
         return Plugin.stream_weight(key)
 
     def _get_streams(self):
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         headers = {
             'User-Agent': useragents.FIREFOX,
             'Referer': self.url

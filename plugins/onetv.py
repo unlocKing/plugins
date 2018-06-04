@@ -1,3 +1,4 @@
+import logging
 import random
 import re
 import time
@@ -7,6 +8,8 @@ from streamlink.plugin.api import http
 from streamlink.plugin.api import useragents
 from streamlink.plugin.api import validate
 from streamlink.stream import HLSStream
+
+log = logging.getLogger(__name__)
 
 
 class OneTV(Plugin):
@@ -63,8 +66,8 @@ class OneTV(Plugin):
         return cls._url_re.match(url)
 
     def _get_streams(self):
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         headers = {
             'Referer': self.url,
             'User-Agent': useragents.FIREFOX
@@ -92,7 +95,7 @@ class OneTV(Plugin):
         hls_url = '{url}&s={session}'.format(url=hls_url, session=json_session['s'])
 
         if hls_url:
-            self.logger.debug('HLS URL: {0}'.format(hls_url))
+            log.debug('HLS URL: {0}'.format(hls_url))
             streams = HLSStream.parse_variant_playlist(self.session, hls_url, name_fmt='{pixels}_{bitrate}')
             if not streams:
                 return {'live': HLSStream(self.session, hls_url)}

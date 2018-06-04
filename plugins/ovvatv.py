@@ -1,3 +1,4 @@
+import logging
 import re
 
 from base64 import b64decode
@@ -10,6 +11,8 @@ from streamlink.plugin.api import useragents
 from streamlink.plugin.api import validate
 from streamlink.stream import HLSStream
 from streamlink.utils import parse_json
+
+log = logging.getLogger(__name__)
 
 
 class ovvaTV(Plugin):
@@ -31,8 +34,8 @@ class ovvaTV(Plugin):
 
     def _get_streams(self):
         http.headers.update({'User-Agent': useragents.FIREFOX})
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         res = http.get(self.url)
         data = self.data_re.search(res.text)
         next_date = self.next_date_re.search(res.text)
@@ -41,14 +44,14 @@ class ovvaTV(Plugin):
                 ovva_url = parse_json(b64decode(data.group(1)).decode('utf8'), schema=self.ovva_data_schema)
                 stream_url = http.get(ovva_url, schema=self.ovva_redirect_schema)
             except PluginError as e:
-                self.logger.error('Could not find stream URL: {0}', e)
+                log.error('Could not find stream URL: {0}', e)
             else:
                 return HLSStream.parse_variant_playlist(self.session, stream_url)
         elif next_date:
-            self.logger.info('The broadcast will be available at {0}'.format(
+            log.info('The broadcast will be available at {0}'.format(
                 datetime.fromtimestamp(int(next_date.group(1))).strftime('%Y-%m-%d %H:%M:%S')))
         else:
-            self.logger.error('Could not find player data.')
+            log.error('Could not find player data.')
 
 
 __plugin__ = ovvaTV

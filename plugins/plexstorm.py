@@ -1,3 +1,4 @@
+import logging
 import re
 
 from streamlink import PluginError
@@ -5,6 +6,8 @@ from streamlink.plugin import Plugin
 from streamlink.plugin.api import http
 from streamlink.plugin.api import useragents
 from streamlink.stream import HLSStream
+
+log = logging.getLogger(__name__)
 
 
 class Plexstorm(Plugin):
@@ -21,8 +24,8 @@ class Plexstorm(Plugin):
 
     def _get_streams(self):
         http.headers.update({'User-Agent': useragents.FIREFOX})
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         res = http.get(self.url)
 
         m = self._token_re.search(res.text)
@@ -38,11 +41,11 @@ class Plexstorm(Plugin):
         res = http.get(self.url)
         m = self._hls_re.search(res.text)
         if not m:
-            self.logger.debug('No video url found.')
+            log.debug('No video url found.')
             return
 
         hls_url = m.group('url')
-        self.logger.debug('URL={0}'.format(hls_url))
+        log.debug('URL={0}'.format(hls_url))
         streams = HLSStream.parse_variant_playlist(self.session, hls_url)
         if not streams:
             return {'live': HLSStream(self.session, hls_url)}

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import random
 import re
 
@@ -9,6 +10,8 @@ from streamlink.plugin import Plugin, PluginError
 from streamlink.plugin.api import http
 from streamlink.plugin.api import useragents
 from streamlink.stream import RTMPStream
+
+log = logging.getLogger(__name__)
 
 
 class SakuraLive(Plugin):
@@ -48,13 +51,13 @@ class SakuraLive(Plugin):
         return cls._url_re.match(url) is not None
 
     def _get_streams(self):
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
-        self.logger.info('only FREE content is available.')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
+        log.info('only FREE content is available.')
         http.headers.update({'User-Agent': useragents.FIREFOX})
 
         channel = self._url_re.match(self.url).group('channel')
-        self.logger.info('Channel: {0}'.format(channel))
+        log.info('Channel: {0}'.format(channel))
 
         res = http.get(self.url_id.format(channel))
         m = self._channel_id_re.search(res.text)
@@ -82,10 +85,10 @@ class SakuraLive(Plugin):
         data = AMFPacket.deserialize(BytesIO(res.content))
         result = data.messages[0].value
 
-        self.logger.debug('--- DEBUG DATA ---'.format())
+        log.debug('--- DEBUG DATA ---'.format())
         for _r in result:
-            self.logger.debug('{0}: {1}'.format(_r, result[_r]))
-        self.logger.debug('--- DEBUG DATA ---'.format())
+            log.debug('{0}: {1}'.format(_r, result[_r]))
+        log.debug('--- DEBUG DATA ---'.format())
 
         if result['result'] != 'true':
             _err = self.error_code.get(str(int(result['errorCode'])))

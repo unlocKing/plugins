@@ -1,3 +1,4 @@
+import logging
 import re
 
 from streamlink.plugin import Plugin
@@ -5,6 +6,8 @@ from streamlink.plugin.api import http
 from streamlink.plugin.api import useragents
 from streamlink.stream import HLSStream
 from streamlink.utils import update_scheme
+
+log = logging.getLogger(__name__)
 
 
 class BalticLivecam(Plugin):
@@ -32,21 +35,21 @@ class BalticLivecam(Plugin):
 
     def _get_streams(self):
         http.headers.update({'User-Agent': useragents.FIREFOX})
-        self.logger.info('This is a custom plugin. '
-                         'For support visit https://github.com/back-to/plugins')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         res = http.get(self.url)
 
         data = self._data_re.search(res.text)
         if data:
-            self.logger.debug('Found _data_re')
+            log.debug('Found _data_re')
             data = self.js_to_json_regex(data.group(1))
             res = http.post(self.api_url, data=data)
             m = self._hls_re.search(res.text)
             if m:
-                self.logger.debug('Found _hls_re')
+                log.debug('Found _hls_re')
                 hls_url = m.group('url')
                 hls_url = update_scheme('http://', hls_url)
-                self.logger.debug('URL={0}'.format(hls_url))
+                log.debug('URL={0}'.format(hls_url))
                 streams = HLSStream.parse_variant_playlist(self.session, hls_url)
                 if not streams:
                     return {'live': HLSStream(self.session, hls_url)}
@@ -55,10 +58,10 @@ class BalticLivecam(Plugin):
 
         iframe = self._iframe_re.search(res.text)
         if iframe:
-            self.logger.debug('Found _iframe_re')
+            log.debug('Found _iframe_re')
             iframe_url = iframe.group('url')
             iframe_url = update_scheme('http://', iframe_url)
-            self.logger.debug('URL={0}'.format(iframe_url))
+            log.debug('URL={0}'.format(iframe_url))
             return self.session.streams(iframe_url)
 
 
