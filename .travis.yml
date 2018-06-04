@@ -20,5 +20,5 @@ before_install:
 #  - pip install -e .
 
 script:
-  - pytest --cov=src
-  - flake8 src/
+  - pytest --cov=plugins
+  - flake8 plugins/
