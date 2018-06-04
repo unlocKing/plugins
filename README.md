@@ -10,3 +10,13 @@ This plugins are only tested with this streamlink version
 # Guide
 
 - https://liveproxy.github.io/plugins.html
+
+### Linux Guide
+
+clone it and make a symbolic link
+
+```sh
+git clone https://github.com/back-to/plugins.git
+cd plugins
+ln -s "$(pwd)/plugins/" "$HOME/.config/streamlink/"
+```
