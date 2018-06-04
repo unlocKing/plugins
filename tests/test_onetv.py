@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.onetv import OneTV
+from plugins.onetv import OneTV
 
 
 class TestPluginPerviyKanal(unittest.TestCase):

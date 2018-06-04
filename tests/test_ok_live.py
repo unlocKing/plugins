@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.ok_live import OK_live
+from plugins.ok_live import OK_live
 
 
 class TestPluginOKru(unittest.TestCase):

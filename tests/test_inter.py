@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.inter import Inter
+from plugins.inter import Inter
 
 
 class TestPluginInter(unittest.TestCase):

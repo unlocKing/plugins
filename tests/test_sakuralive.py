@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.sakuralive import SakuraLive
+from plugins.sakuralive import SakuraLive
 
 
 class TestPluginSakuraLive(unittest.TestCase):

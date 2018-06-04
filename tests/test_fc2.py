@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.fc2 import FC2
+from plugins.fc2 import FC2
 
 
 class TestPluginFC2(unittest.TestCase):

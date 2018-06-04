@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.rutube import RUtube
+from plugins.rutube import RUtube
 
 
 class TestPluginRUtube(unittest.TestCase):

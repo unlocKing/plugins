@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.plexstorm import Plexstorm
+from plugins.plexstorm import Plexstorm
 
 
 class TestPluginPlexstorm(unittest.TestCase):

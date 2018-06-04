@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.myfreecams import MyFreeCams
+from plugins.myfreecams import MyFreeCams
 
 
 class TestPluginMyFreeCams(unittest.TestCase):

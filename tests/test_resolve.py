@@ -9,10 +9,10 @@ from streamlink.plugin import api
 from streamlink.plugin.plugin import HIGH_PRIORITY
 from streamlink.plugin.plugin import NO_PRIORITY
 
-from src.streamlink.plugins.resolve import _iframe_re
-from src.streamlink.plugins.resolve import _playlist_re
-from src.streamlink.plugins.resolve import _rtmp_re
-from src.streamlink.plugins.resolve import Resolve
+from plugins.resolve import _iframe_re
+from plugins.resolve import _playlist_re
+from plugins.resolve import _rtmp_re
+from plugins.resolve import Resolve
 
 try:
     from unittest.mock import patch
@@ -221,17 +221,15 @@ class PluginResolveTestMeta(type):
 
         def gen_test(_website_text, _stream_data):
 
-            @patch("src.streamlink.plugins.resolve.http")
+            @patch("plugins.resolve.http")
             def test(self, mock_http):
                 self.session = Streamlink()
-                self.session.load_plugins('src/streamlink/plugins')
-                self.manager = Logger()
-                self.logger = self.manager.new_module("test")
+                self.session.load_plugins('plugins')
 
                 mock_http.get = api.HTTPSession().get
                 mock_http.json = api.HTTPSession().json
 
-                Resolve.bind(self.session, "test.plugin.resolve")
+                Resolve.bind(self.session, "test.resolve")
 
                 default_iframe = "http://mocked/default/iframe"
                 file_url = _stream_data["url"]
@@ -270,7 +268,7 @@ class TestPluginResolve_get_streams(unittest.TestCase):
 
 class TestPluginResolve(unittest.TestCase):
 
-    @patch("src.streamlink.plugins.resolve.http")
+    @patch("plugins.resolve.http")
     def setUp(self, mock_http):
         self.res_plugin = Resolve("resolve://https://example.com")
         self.res_plugin.manager = Logger()

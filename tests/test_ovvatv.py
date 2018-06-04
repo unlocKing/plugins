@@ -1,6 +1,6 @@
 import unittest
 
-from src.streamlink.plugins.ovvatv import ovvaTV
+from plugins.ovvatv import ovvaTV
 
 
 class TestPluginovvaTV(unittest.TestCase):
