@@ -19,6 +19,7 @@ class OneTV(Plugin):
         - ctc.ru
         - ctclove.ru
         - domashny.ru
+        - ren.tv
     '''
 
     API_HLS_SESSION = 'https://stream.1tv.ru/get_hls_session'
@@ -29,6 +30,7 @@ class OneTV(Plugin):
         'ctc': 'ctc',
         'ctclove': 'ctc-love',
         'domashny': 'ctc-dom',
+        'ren': 'ren-tv',
     }
 
     _session_schema = validate.Schema(
@@ -39,6 +41,7 @@ class OneTV(Plugin):
 
     _url_re = re.compile(r'''https?://
         (?:(?:media|stream|www)?\.)?
+        (?:
         (?P<domain>
             1tv
             |
@@ -58,7 +61,17 @@ class OneTV(Plugin):
                 live
                 |
                 online
+                |
+                embed/nmg/nmg-(?P<channel2>[^/?]+.)\.html
                 )
+        |
+        (?P<domain2>
+            ren
+            )\.tv/
+                (?:
+                live
+                )
+        )
         ''', re.VERBOSE)
 
     @classmethod
@@ -77,7 +90,9 @@ class OneTV(Plugin):
         match = self._url_re.match(self.url)
         channel = match.group('channel')
         if not channel:
-            channel = match.group('domain')
+            channel = (match.group('domain2')
+                       or match.group('channel2')
+                       or match.group('domain'))
             channel = self.channel_map[channel]
 
         cdn = random.choice(['cdn8', 'edge1', 'edge3'])
