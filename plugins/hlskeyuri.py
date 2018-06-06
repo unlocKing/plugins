@@ -3,9 +3,11 @@ import re
 
 from Crypto.Cipher import AES
 
-from streamlink.compat import urlparse
 from streamlink import StreamError
+from streamlink.compat import urlparse
 from streamlink.plugin import Plugin, PluginArgument, PluginArguments
+from streamlink.plugin.api import http
+from streamlink.plugin.api import useragents
 from streamlink.plugin.plugin import parse_url_params
 from streamlink.stream import HLSStream
 from streamlink.stream.hls import HLSStreamWriter, HLSStreamReader, num_to_iv
@@ -96,9 +98,24 @@ class HLSKeyUriPlugin(Plugin):
         return cls._url_re.match(url)
 
     def _get_streams(self):
+        http.headers.update({'User-Agent': useragents.FIREFOX})
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
+
         url, params = parse_url_params(self.url)
         urlnoproto = self._url_re.match(url).group(2)
         urlnoproto = update_scheme('http://', urlnoproto)
+
+        streams = self.session.streams(
+            urlnoproto, stream_types=['hls'])
+
+        if not streams:
+            log.debug('No stream found for hls-key-uri,'
+                      ' stream is not available.')
+            return
+
+        stream = streams['best']
+        urlnoproto = stream.url
 
         log.debug('URL={0}; params={1}', urlnoproto, params)
         streams = KeyUriHLSStream.parse_variant_playlist(self.session, urlnoproto, **params)
