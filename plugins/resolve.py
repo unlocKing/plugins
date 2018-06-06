@@ -323,8 +323,6 @@ class Resolve(Plugin):
             'ADS',        # - Remove obviously ad urls
         ]
 
-        is_session_reload = (self.session.options.get('hls-session-reload-time')
-                             or self.session.options.get('hls-session-reload-segment'))
         new_list = []
         for url in old_list:
             new_url = self.repair_url(url, base_url, stream_base)
@@ -335,7 +333,7 @@ class Resolve(Plugin):
             REMOVE = False
             count = 0
 
-            for url_status in ((not is_session_reload and new_url in ResolveCache.cache_url_list),
+            for url_status in ((new_url in ResolveCache.cache_url_list),
                                (not parse_new_url.scheme.startswith(('http'))),
                                (url_type == 'iframe'
                                 and whitelist_netloc_user is not None
