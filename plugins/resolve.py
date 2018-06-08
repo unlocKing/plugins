@@ -515,7 +515,7 @@ class Resolve(Plugin):
         new_session_url = False
 
         self.url = update_scheme('http://', self.url)
-        log.debug('resolve.py - {0}'.format(self.url))
+        log.info('resolve.py - {0}'.format(self.url))
 
         # GET website content
         o_res = self._res_text(self.url)
@@ -542,6 +542,8 @@ class Resolve(Plugin):
             if playlist_list:
                 log.debug('Found URL: {0}'.format(', '.join(playlist_list)))
                 return self._resolve_playlist(playlist_list)
+        else:
+            log.debug('No playlist_all')
 
         # iFrame URL
         iframe_list = []
@@ -559,6 +561,8 @@ class Resolve(Plugin):
             if new_iframe_list:
                 log.info('Found iframes: {0}'.format(', '.join(new_iframe_list)))
                 new_session_url = new_iframe_list[0]
+        else:
+            log.debug('No iframe_list')
 
         if not new_session_url:
             # search for window.location.href
