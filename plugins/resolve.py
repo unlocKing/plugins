@@ -404,7 +404,11 @@ class Resolve(Plugin):
 
         match = self._window_location_re.search(res)
         if match:
-            return match.group('url')
+            temp_url = urljoin(self.url, match.group('url'))
+            log.debug('Found window_location: {0}'.format(temp_url))
+            return temp_url
+
+        log.debug('No window_location')
         return False
 
     def _resolve_playlist(self, playlist_all):
