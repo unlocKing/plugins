@@ -18,6 +18,7 @@ from streamlink.plugin.plugin import NO_PRIORITY
 from streamlink.stream import HDSStream
 from streamlink.stream import HLSStream
 from streamlink.stream import HTTPStream
+from streamlink.stream.dash import DASHStream
 from streamlink.utils import update_scheme
 
 # Regex for iFrames
@@ -63,10 +64,10 @@ class Resolve(Plugin):
     Supported
         - embedded url of an already existing plugin
         - website with an unencrypted fileurl in there source code,
-          HDS, HLS and HTTP
+          DASH, HDS, HLS and HTTP
 
     Unsupported
-        - websites with DASH or RTMP
+        - websites with RTMP
           it will show the url in the debug log, but won't try to start it.
         - streams that require
             - an authentication
@@ -462,7 +463,9 @@ class Resolve(Plugin):
                     log.error('Skipping http_url - {0}'.format(str(e)))
             elif parsed_url.path.endswith(('.mpd')):
                 try:
-                    log.info('Found mpd: {0}'.format(url))
+                    for s in DASHStream.parse_manifest(self.session,
+                                                       url).items():
+                        yield s
                 except Exception as e:
                     log.error('Skipping mpd_url - {0}'.format(str(e)))
 

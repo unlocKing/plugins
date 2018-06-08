@@ -69,11 +69,11 @@ Plugin that will try to find a valid streamurl on every website
 
   - embedded url of an already existing plugin
   - website with an unencrypted fileurl in there source code,
-    HDS, HLS and HTTP
+    DASH, HDS, HLS and HTTP
 
 **Unsupported**
 
-  - websites with DASH or RTMP
+  - websites with RTMP
     it will show the url in the debug log, but won't try to start it.
   - streams that require
       - an authentication
