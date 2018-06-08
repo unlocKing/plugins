@@ -78,12 +78,19 @@ class Resolve(Plugin):
     # Regex for: .mp3 and mp4 files
     _httpstream_bitrate_re = re.compile(r'''_(?P<bitrate>\d{1,4})\.mp(?:3|4)''')
     # Regex for: streamBasePath for .f4m urls
-    _stream_base_re = re.compile(r'''streamBasePath\s?(?::|=)\s?["'](?P<base>[^"']+)["']''', re.IGNORECASE)
+    _stream_base_re = re.compile(
+        r'''streamBasePath\s?(?::|=)\s?["'](?P<base>[^"']+)["']''',
+        re.IGNORECASE)
     # Regex for: javascript redirection
-    _window_location_re = re.compile(r'''<script[^<]+window\.location\.href\s?=\s?["'](?P<url>[^"']+)["'];[^<>]+''', re.DOTALL)
-    _unescape_iframe_re = re.compile(r'''unescape\050["'](?P<data>%3C(?:iframe|%69%66%72%61%6d%65)%20[^"']+)["']''', re.IGNORECASE)
+    _window_location_re = re.compile(
+        r'''<script[^<]+window\.location\.href\s?=\s?["'](?P<url>[^"']+)["'];[^<>]+''',
+        re.DOTALL)
+    _unescape_iframe_re = re.compile(
+        r'''unescape\050["'](?P<data>%3C(?:iframe|%69%66%72%61%6d%65)%20[^"']+)["']''',
+        re.IGNORECASE)
     # Regex for obviously ad paths
-    _ads_path = re.compile(r'''(?:/(?:static|\d+))?/ads?/?(?:\w+)?(?:\d+x\d+)?(?:_\w+)?\.(?:html?|php)''')
+    _ads_path = re.compile(
+        r'''(?:/(?:static|\d+))?/ads?/?(?:\w+)?(?:\d+x\d+)?(?:_\w+)?\.(?:html?|php)''')
 
     # START - _make_url_list
     # Not allowed at the end of the parsed url path
@@ -167,7 +174,8 @@ class Resolve(Plugin):
 
               'example.com,localhost,google.com'
 
-            Useful for websites with lots of iframes, where the main iframe always has the same hosting domain.
+            Useful for websites with lots of iframes,
+            where the main iframe always has the same hosting domain.
             '''
         ),
         PluginArgument(
@@ -181,7 +189,8 @@ class Resolve(Plugin):
 
               'example.com/mypath,localhost/example,google.com/folder'
 
-            Useful for websites with different iframes of the same domain, where the main iframe always has the same path.
+            Useful for websites with different iframes of the same domain,
+            where the main iframe always has the same path.
             '''
         ),
     )
@@ -238,7 +247,8 @@ class Resolve(Plugin):
         '''
         status = False
         for netloc, path in check_list:
-            if parsed_url.netloc.endswith(netloc) and parsed_url.path.startswith(path):
+            if (parsed_url.netloc.endswith(netloc)
+                    and parsed_url.path.startswith(path)):
                 status = True
         return status
 
@@ -269,7 +279,8 @@ class Resolve(Plugin):
             new_url = 'http:' + new_url[9:]
         elif new_url.startswith('https&#58;//'):
             new_url = 'https:' + new_url[10:]
-        # creates a valid url from path only urls and adds missing scheme for // urls
+        # creates a valid url from path only urls
+        # and adds missing scheme for // urls
         if stream_base and new_url[1] is not '/':
             if new_url[0] is '/':
                 new_url = new_url[1:]
@@ -299,12 +310,14 @@ class Resolve(Plugin):
         blacklist_netloc_user = self.get_option('blacklist_netloc')
         whitelist_netloc_user = self.get_option('whitelist_netloc')
 
-        # repairs scheme of --resolve-blacklist-path and merges it into blacklist_path
+        # repairs scheme of --resolve-blacklist-path
+        # and merges it into blacklist_path
         blacklist_path_user = self.get_option('blacklist_path')
         if blacklist_path_user is not None:
             self.blacklist_path = self.merge_path_list(self.blacklist_path, blacklist_path_user)
 
-        # repairs scheme of --resolve-whitelist-path and merges it into whitelist_path
+        # repairs scheme of --resolve-whitelist-path
+        # and merges it into whitelist_path
         whitelist_path_user = self.get_option('whitelist_path')
         if whitelist_path_user is not None:
             whitelist_path = self.merge_path_list([], whitelist_path_user)
@@ -522,7 +535,10 @@ class Resolve(Plugin):
             else:
                 stream_base = ''
 
-            playlist_list = self._make_url_list(playlist_all, self.url, url_type='playlist', stream_base=stream_base)
+            playlist_list = self._make_url_list(playlist_all,
+                                                self.url,
+                                                url_type='playlist',
+                                                stream_base=stream_base)
             if playlist_list:
                 log.debug('Found URL: {0}'.format(', '.join(playlist_list)))
                 return self._resolve_playlist(playlist_list)
@@ -537,7 +553,9 @@ class Resolve(Plugin):
 
         if iframe_list:
             # repair and filter iframe url list
-            new_iframe_list = self._make_url_list(iframe_list, self.url, url_type='iframe')
+            new_iframe_list = self._make_url_list(iframe_list,
+                                                  self.url,
+                                                  url_type='iframe')
             if new_iframe_list:
                 log.info('Found iframes: {0}'.format(', '.join(new_iframe_list)))
                 new_session_url = new_iframe_list[0]
