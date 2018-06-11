@@ -382,6 +382,7 @@ class Resolve(Plugin):
             # Add repaired url
             new_list += [new_url]
         # Remove duplicates
+        log.debug('List length: {0} (with duplicates)'.format(len(new_list)))
         new_list = sorted(list(set(new_list)))
         return new_list
 
@@ -405,7 +406,9 @@ class Resolve(Plugin):
             unescape_text = ','.join(unescape_text)
             unescape_iframe = _iframe_re.findall(unescape_text)
             if unescape_iframe:
+                log.debug('Found {0} unescape_iframe'.format(len(unescape_iframe)))
                 return unescape_iframe
+        log.debug('No unescape_iframe')
         return False
 
     def _window_location(self, res):
@@ -525,7 +528,8 @@ class Resolve(Plugin):
         new_session_url = False
 
         self.url = update_scheme('http://', self.url)
-        log.info('{0} resolve - {1}'.format(self._run, self.url))
+        log.info('--- {0} ---'.format(self._run))
+        log.info('--- URL={0}'.format(self.url))
 
         # GET website content
         o_res = self._res_text(self.url)
@@ -538,6 +542,7 @@ class Resolve(Plugin):
         # Playlist URL
         playlist_all = _playlist_re.findall(o_res)
         if playlist_all:
+            log.debug('Found Playlists: {0}'.format(len(playlist_all)))
             # m_base is used for .f4m files that doesn't have a base_url
             m_base = self._stream_base_re.search(o_res)
             if m_base:
@@ -550,10 +555,11 @@ class Resolve(Plugin):
                                                 url_type='playlist',
                                                 stream_base=stream_base)
             if playlist_list:
+                log.debug('Found Playlists: {0} (valid)'.format(len(playlist_list)))
                 log.debug('Found URL: {0}'.format(', '.join(playlist_list)))
                 return self._resolve_playlist(playlist_list)
         else:
-            log.debug('No playlist_all')
+            log.debug('No Playlists')
 
         # iFrame URL
         iframe_list = []
@@ -564,15 +570,17 @@ class Resolve(Plugin):
             iframe_list += _iframe_list
 
         if iframe_list:
+            log.debug('Found Iframes: {0}'.format(len(iframe_list)))
             # repair and filter iframe url list
             new_iframe_list = self._make_url_list(iframe_list,
                                                   self.url,
                                                   url_type='iframe')
             if new_iframe_list:
-                log.info('Found iframes: {0}'.format(', '.join(new_iframe_list)))
+                log.debug('Found Iframes: {0} (valid)'.format(len(new_iframe_list)))
+                log.info('URL Iframes: {0}'.format(', '.join(new_iframe_list)))
                 new_session_url = new_iframe_list[0]
         else:
-            log.debug('No iframe_list')
+            log.debug('No Iframes')
 
         if not new_session_url:
             # search for window.location.href
