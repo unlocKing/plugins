@@ -686,6 +686,9 @@ class TestPluginResolve(unittest.TestCase):
             """
                 data-u="{upload_url=https://example.com/mobile.mp4,poster=https://example.com/mobile.jpg,id=123,flow=full}"
             """,
+            """
+                <img src="http://example.com/images/123.mp40-480p.jpg " />
+            """,
         ]
         if not hasattr(self, 'assertNotRegex'):
             self.assertNotRegex = self.assertNotRegexpMatches

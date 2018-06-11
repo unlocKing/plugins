@@ -35,7 +35,7 @@ _playlist_re = re.compile(r'''
     (?:["']|=|&quot;)(?P<url>
         (?<!title=["'])
             [^"'<>\s\;{}]+\.(?:m3u8|f4m|mp3|mp4|mpd)
-        (?:[^"'<>\s\\{}]+)?)
+        (?:\?[^"'<>\s\\{}]+)?)
     (?:["']|(?<!;)\s|>|\\&quot;)
     ''', re.DOTALL | re.VERBOSE)
 
@@ -123,16 +123,6 @@ class Resolve(Plugin):
         ('twitter.com', '/widgets'),
         ('vesti.ru', '/native_widget.html'),
     ]
-    # Only allowed as a valid file format in playlist urls
-    whitelist_endswith = (
-        '.f4m',
-        '.hls',
-        '.m3u',
-        '.m3u8',
-        '.mp3',
-        '.mp4',
-        '.mpd',
-    )
     # END - _make_url_list
 
     arguments = PluginArguments(
@@ -301,7 +291,7 @@ class Resolve(Plugin):
                 - iframe
                     --resolve-whitelist-netloc
                 - playlist
-                    whitelist_endswith
+
             stream_base: basically same as base_url, but used for .f4m files.
 
         Returns:
@@ -333,7 +323,6 @@ class Resolve(Plugin):
             'BL-netloc',  # - Removes blacklisted domains --resolve-blacklist-netloc
             'BL-path',    # - Removes blacklisted paths from a domain --resolve-blacklist-path
             'BL-ew',      # - Removes unwanted endswith images and chatrooms
-            'WL-ew',      # - Allow only valid file formats for playlists
             'ADS',        # - Remove obviously ad urls
         ]
 
@@ -360,8 +349,6 @@ class Resolve(Plugin):
                                 and parse_new_url.netloc.endswith(tuple(blacklist_netloc_user))),
                                (self.compare_url_path(parse_new_url, self.blacklist_path) is True),
                                (parse_new_url.path.endswith(self.blacklist_endswith)),
-                               ((url_type == 'playlist'
-                                 and not parse_new_url.path.endswith(self.whitelist_endswith))),
                                (self._ads_path.match(parse_new_url.path))):
 
                 count += 1
