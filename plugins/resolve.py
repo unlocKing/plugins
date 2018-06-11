@@ -199,6 +199,7 @@ class Resolve(Plugin):
             ResolveCache.cache_url_list = [self.url]
             self.referer = self.url
 
+        self._run = len(ResolveCache.cache_url_list)
         http.headers.update({'Referer': self.referer})
 
     @classmethod
@@ -508,8 +509,6 @@ class Resolve(Plugin):
         return res.text
 
     def _get_streams(self):
-        log.info('This is a custom plugin. '
-                 'For support visit https://github.com/back-to/plugins')
         '''Try to find streams on every website.
 
         Returns:
@@ -519,10 +518,14 @@ class Resolve(Plugin):
         Raises:
             NoPluginError: if no video was found.
         '''
+        if self._run <= 1:
+            log.info('This is a custom plugin. '
+                     'For support visit https://github.com/back-to/plugins')
+
         new_session_url = False
 
         self.url = update_scheme('http://', self.url)
-        log.info('resolve.py - {0}'.format(self.url))
+        log.info('{0} resolve - {1}'.format(self._run, self.url))
 
         # GET website content
         o_res = self._res_text(self.url)
