@@ -315,15 +315,15 @@ class Resolve(Plugin):
 
         # sorted after the way streamlink will try to remove an url
         status_remove = [
-            'SAME-URL',   # - Removes an already used iframe url
-            'SCHEME',     # - Allow only an url with a valid scheme
-            'WL-netloc',  # - Allow only whitelisted domains --resolve-whitelist-netloc
-            'WL-path',    # - Allow only whitelisted paths from a domain --resolve-whitelist-path
-            'BL-static',  # - Removes blacklisted domains
-            'BL-netloc',  # - Removes blacklisted domains --resolve-blacklist-netloc
-            'BL-path',    # - Removes blacklisted paths from a domain --resolve-blacklist-path
-            'BL-ew',      # - Removes unwanted endswith images and chatrooms
-            'ADS',        # - Remove obviously ad urls
+            'SAME-URL',
+            'SCHEME',
+            'WL-netloc',
+            'WL-path',
+            'BL-static',
+            'BL-netloc',
+            'BL-path',
+            'BL-ew',
+            'ADS',
         ]
 
         new_list = []
@@ -336,20 +336,37 @@ class Resolve(Plugin):
             REMOVE = False
             count = 0
 
-            for url_status in ((new_url in ResolveCache.cache_url_list),
-                               (not parse_new_url.scheme.startswith(('http'))),
-                               (url_type == 'iframe'
-                                and whitelist_netloc_user is not None
-                                and parse_new_url.netloc.endswith(tuple(whitelist_netloc_user)) is False),
-                               (url_type == 'iframe'
-                                and whitelist_path_user is not None
-                                and self.compare_url_path(parse_new_url, whitelist_path) is False),
-                               (parse_new_url.netloc.endswith(self.blacklist_netloc)),
-                               (blacklist_netloc_user is not None
-                                and parse_new_url.netloc.endswith(tuple(blacklist_netloc_user))),
-                               (self.compare_url_path(parse_new_url, self.blacklist_path) is True),
-                               (parse_new_url.path.endswith(self.blacklist_endswith)),
-                               (self._ads_path.match(parse_new_url.path))):
+            # status_remove must be updated on changes
+            for url_status in (
+                    # Removes an already used iframe url
+                    (new_url in ResolveCache.cache_url_list),
+                    # Allow only an url with a valid scheme
+                    (not parse_new_url.scheme.startswith(('http'))),
+                    # Allow only whitelisted domains for iFrames
+                    # --resolve-whitelist-netloc
+                    (url_type == 'iframe'
+                     and whitelist_netloc_user is not None
+                     and parse_new_url.netloc.endswith(tuple(whitelist_netloc_user)) is False),
+                    # Allow only whitelisted paths from a domain for iFrames
+                    # --resolve-whitelist-path
+                    (url_type == 'iframe'
+                     and whitelist_path_user is not None
+                     and self.compare_url_path(parse_new_url, whitelist_path) is False),
+                    # Removes blacklisted domains from a static list
+                    # self.blacklist_netloc
+                    (parse_new_url.netloc.endswith(self.blacklist_netloc)),
+                    # Removes blacklisted domains
+                    # --resolve-blacklist-netloc
+                    (blacklist_netloc_user is not None
+                     and parse_new_url.netloc.endswith(tuple(blacklist_netloc_user))),
+                    # Removes blacklisted paths from a domain
+                    # --resolve-blacklist-path
+                    (self.compare_url_path(parse_new_url, self.blacklist_path) is True),
+                    # Removes unwanted endswith images and chatrooms
+                    (parse_new_url.path.endswith(self.blacklist_endswith)),
+                    # Removes obviously AD URL
+                    (self._ads_path.match(parse_new_url.path)),
+            ):
 
                 count += 1
                 if url_status:
