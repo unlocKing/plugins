@@ -200,7 +200,10 @@ class Resolve(Plugin):
             self.referer = self.url
 
         self._run = len(ResolveCache.cache_url_list)
+
         http.headers.update({'Referer': self.referer})
+        if http.headers['User-Agent'].startswith('python-requests'):
+            http.headers.update({'User-Agent': useragents.FIREFOX})
 
     @classmethod
     def priority(cls, url):
