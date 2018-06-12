@@ -110,16 +110,6 @@ class Resolve(Plugin):
         'googletagmanager.com',
         'javascript:false',
     )
-    # Not allowed at the end of the parsed url netloc and the start of the path
-    blacklist_path = [
-        ('expressen.se', '/_livetvpreview/'),
-        ('facebook.com', '/connect'),
-        ('facebook.com', '/plugins'),
-        ('haber7.com', '/radyohome/station-widget/'),
-        ('static.tvr.by', '/upload/video/atn/promo'),
-        ('twitter.com', '/widgets'),
-        ('vesti.ru', '/native_widget.html'),
-    ]
     # END - _make_url_list
 
     arguments = PluginArguments(
@@ -299,21 +289,6 @@ class Resolve(Plugin):
             (list) A new valid list of urls.
         '''
 
-        blacklist_netloc_user = self.get_option('blacklist_netloc')
-        whitelist_netloc_user = self.get_option('whitelist_netloc')
-
-        # repairs scheme of --resolve-blacklist-path
-        # and merges it into blacklist_path
-        blacklist_path_user = self.get_option('blacklist_path')
-        if blacklist_path_user is not None:
-            self.blacklist_path = self.merge_path_list(self.blacklist_path, blacklist_path_user)
-
-        # repairs scheme of --resolve-whitelist-path
-        # and merges it into whitelist_path
-        whitelist_path_user = self.get_option('whitelist_path')
-        if whitelist_path_user is not None:
-            whitelist_path = self.merge_path_list([], whitelist_path_user)
-
         # sorted after the way streamlink will try to remove an url
         status_remove = [
             'SAME-URL',
@@ -346,23 +321,23 @@ class Resolve(Plugin):
                     # Allow only whitelisted domains for iFrames
                     # --resolve-whitelist-netloc
                     (url_type == 'iframe'
-                     and whitelist_netloc_user is not None
-                     and parse_new_url.netloc.endswith(tuple(whitelist_netloc_user)) is False),
+                     and self.get_option('whitelist_netloc')
+                     and parse_new_url.netloc.endswith(tuple(self.get_option('whitelist_netloc'))) is False),
                     # Allow only whitelisted paths from a domain for iFrames
                     # --resolve-whitelist-path
                     (url_type == 'iframe'
-                     and whitelist_path_user is not None
-                     and self.compare_url_path(parse_new_url, whitelist_path) is False),
+                     and ResolveCache.whitelist_path
+                     and self.compare_url_path(parse_new_url, ResolveCache.whitelist_path) is False),
                     # Removes blacklisted domains from a static list
                     # self.blacklist_netloc
                     (parse_new_url.netloc.endswith(self.blacklist_netloc)),
                     # Removes blacklisted domains
                     # --resolve-blacklist-netloc
-                    (blacklist_netloc_user is not None
-                     and parse_new_url.netloc.endswith(tuple(blacklist_netloc_user))),
+                    (self.get_option('blacklist_netloc')
+                     and parse_new_url.netloc.endswith(tuple(self.get_option('blacklist_netloc')))),
                     # Removes blacklisted paths from a domain
                     # --resolve-blacklist-path
-                    (self.compare_url_path(parse_new_url, self.blacklist_path) is True),
+                    (self.compare_url_path(parse_new_url, ResolveCache.blacklist_path) is True),
                     # Removes unwanted endswith images and chatrooms
                     (parse_new_url.path.endswith(self.blacklist_endswith)),
                     # Removes obviously AD URL
@@ -511,6 +486,45 @@ class Resolve(Plugin):
             log.debug('URL: {0}'.format(res.url))
         return res.text
 
+    def _set_defaults(self):
+        ''' generates default options
+            and caches them into ResolveCache class
+        '''
+        # START - List for not allowed URL Paths
+        # --resolve-blacklist-path
+        if not hasattr(ResolveCache, 'blacklist_path'):
+
+            # static list
+            blacklist_path = [
+                ('expressen.se', '/_livetvpreview/'),
+                ('facebook.com', '/connect'),
+                ('facebook.com', '/plugins'),
+                ('haber7.com', '/radyohome/station-widget/'),
+                ('static.tvr.by', '/upload/video/atn/promo'),
+                ('twitter.com', '/widgets'),
+                ('vesti.ru', '/native_widget.html'),
+            ]
+
+            # merge user and static list
+            blacklist_path_user = self.get_option('blacklist_path')
+            if blacklist_path_user is not None:
+                blacklist_path = self.merge_path_list(
+                    blacklist_path, blacklist_path_user)
+
+            ResolveCache.blacklist_path = blacklist_path
+        # END
+
+        # START - List of only allowed URL Paths for Iframes
+        # --resolve-whitelist-path
+        if not hasattr(ResolveCache, 'whitelist_path'):
+            whitelist_path = []
+            whitelist_path_user = self.get_option('whitelist_path')
+            if whitelist_path_user is not None:
+                whitelist_path = self.merge_path_list(
+                    [], whitelist_path_user)
+            ResolveCache.whitelist_path = whitelist_path
+        # END
+
     def _get_streams(self):
         '''Try to find streams on every website.
 
@@ -521,6 +535,7 @@ class Resolve(Plugin):
         Raises:
             NoPluginError: if no video was found.
         '''
+        self._set_defaults()
         if self._run <= 1:
             log.info('This is a custom plugin. '
                      'For support visit https://github.com/back-to/plugins')
