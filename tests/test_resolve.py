@@ -269,8 +269,6 @@ class TestPluginResolve(unittest.TestCase):
     @patch("plugins.resolve.http")
     def setUp(self, mock_http):
         self.res_plugin = Resolve("resolve://https://example.com")
-        self.res_plugin.manager = Logger()
-        self.res_plugin.logger = self.res_plugin.manager.new_module("test")
         self.session = Streamlink()
         self.session.load_plugins('src/streamlink/plugins')
 
@@ -288,28 +286,40 @@ class TestPluginResolve(unittest.TestCase):
         self.assertTrue(Resolve.can_handle_url("local.local"))
 
     def test_compare_url_path(self):
-        test_url = "https://www.facebook.com/plugins/123.html"
-        parse_new_url = urlparse(test_url)
-        self.assertTrue(self.res_plugin.compare_url_path(parse_new_url, self.res_plugin.blacklist_path))
+        blacklist_path = [
+            ('example.com', '/_livetvpreview/'),
+            ('foo.bar', '/plugins'),
+        ]
 
-        test_url = "https://example.com/123.html"
-        parse_new_url = urlparse(test_url)
-        self.assertFalse(self.res_plugin.compare_url_path(parse_new_url, self.res_plugin.blacklist_path))
+        self.assertTrue(self.res_plugin.compare_url_path(
+            urlparse('https://www.foo.bar/plugins/123.html'),
+            blacklist_path)
+        )
+
+        self.assertFalse(self.res_plugin.compare_url_path(
+            urlparse('https://example.com/123.html'),
+            blacklist_path)
+        )
 
     def test_merge_path_list(self):
+        blacklist_path = [
+            ('example.com', '/_livetvpreview/'),
+            ('foo.bar', '/plugins'),
+        ]
+
         blacklist_path_user = [
             "example.com/plugins",
             "http://example.com/myplugins",
         ]
 
-        blacklist_path = self.res_plugin.merge_path_list(self.res_plugin.blacklist_path, blacklist_path_user)
+        blacklist_path = self.res_plugin.merge_path_list(blacklist_path, blacklist_path_user)
 
-        blacklist_path_user_test = [
+        valid_output = [
             ("example.com", "/plugins"),
             ("example.com", "/myplugins"),
         ]
 
-        for test_url in blacklist_path_user_test:
+        for test_url in valid_output:
             self.assertIn(test_url, blacklist_path)
 
     def test_repair_url(self):
@@ -347,11 +357,11 @@ class TestPluginResolve(unittest.TestCase):
             },
         ]
         for test_dict in test_list:
-            new_url = self.res_plugin.repair_url(test_dict["url"], base_url, test_dict.get("stream_base"))
+            new_url = self.res_plugin.repair_url(
+                test_dict["url"], base_url, test_dict.get("stream_base"))
             self.assertEqual(test_dict["result"], new_url)
 
     def test_iframe_unescape(self):
-        # Tests for _unescape_iframe_re
         test_list = [
             {
                 "data": """
@@ -375,17 +385,15 @@ class TestPluginResolve(unittest.TestCase):
             self.assertIsNotNone(result_url_list)
             self.assertListEqual(sorted(test_dict["result"]), sorted(result_url_list))
 
-        # test_iframe_unescape - False
-        res_test_list_false = [
+        false_res_list = [
             """<html><body><h1>ABC</h1><p>123</p></body></html>
             """,
         ]
-        for test_res in res_test_list_false:
+        for test_res in false_res_list:
             m = self.res_plugin._iframe_unescape(test_res)
             self.assertFalse(m)
 
     def test_window_location(self):
-        # Tests for _window_location and _window_location_re
         test_list = [
             {
                 "data": """
@@ -409,11 +417,11 @@ class TestPluginResolve(unittest.TestCase):
             self.assertIsNotNone(result_url)
             self.assertEqual(test_dict["result"], result_url)
 
-        res_test_list_false = [
+        false_res_list = [
             """<html><body><h1>ABC</h1><p>123</p></body></html>""",
         ]
 
-        for test_res in res_test_list_false:
+        for test_res in false_res_list:
             m = self.res_plugin._window_location(test_res)
             self.assertFalse(m)
 
@@ -442,7 +450,6 @@ class TestPluginResolve(unittest.TestCase):
 
     def test_iframe_re(self):
         test_list = [
-            # _iframe_re
             {
                 "data": """
                         <iframe src="http://local2.local">    </iframe>
