@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import argparse
 import logging
 import re
 
@@ -46,6 +47,31 @@ def comma_list(values):
     if is_py2:
         return [val.decode('utf8').strip() for val in values.split(',')]
     return [val.strip() for val in values.split(',')]
+
+
+def num(type, min=None, max=None):
+    def func(value):
+        value = type(value)
+
+        if min is not None and not (value > min):
+            raise argparse.ArgumentTypeError(
+                "{0} value must be more than {1} but is {2}".format(
+                    type.__name__, min, value
+                )
+            )
+
+        if max is not None and not (value <= max):
+            raise argparse.ArgumentTypeError(
+                "{0} value must be at most {1} but is {2}".format(
+                    type.__name__, max, value
+                )
+            )
+
+        return value
+
+    func.__name__ = type.__name__
+
+    return func
 
 
 class ResolveCache:
@@ -113,6 +139,18 @@ class Resolve(Plugin):
     # END - _make_url_list
 
     arguments = PluginArguments(
+        PluginArgument(
+            'playlist-max',
+            metavar='NUMBER',
+            type=num(int, min=0, max=25),
+            default=5,
+            help='''
+            Number of how many playlist URLs of the same type
+            are allowed to be resolved with this plugin.
+
+            Default is 5
+            '''
+        ),
         PluginArgument(
             'playlist-referer',
             metavar='URL',
@@ -412,39 +450,66 @@ class Resolve(Plugin):
         playlist_referer = self.get_option('playlist_referer') or self.url
         http.headers.update({'Referer': playlist_referer})
 
+        playlist_max = self.get_option('playlist_max') or 5
+        count_playlist = {
+            'dash': 0,
+            'hds': 0,
+            'hls': 0,
+            'http': 0,
+        }
         for url in playlist_all:
             parsed_url = urlparse(url)
             if parsed_url.path.endswith(('.m3u8')):
+                if count_playlist['hls'] >= playlist_max:
+                    log.debug('Skip - {0}'.format(url))
+                    continue
                 try:
                     streams = HLSStream.parse_variant_playlist(self.session, url).items()
                     if not streams:
                         yield 'live', HLSStream(self.session, url)
                     for s in streams:
                         yield s
+                    log.debug('HLS URL - {0}'.format(url))
+                    count_playlist['hls'] += 1
                 except Exception as e:
-                    log.error('Skipping hls_url - {0}'.format(str(e)))
+                    log.error('Skip HLS with error {0}'.format(str(e)))
             elif parsed_url.path.endswith(('.f4m')):
+                if count_playlist['hds'] >= playlist_max:
+                    log.debug('Skip - {0}'.format(url))
+                    continue
                 try:
                     for s in HDSStream.parse_manifest(self.session, url).items():
                         yield s
+                    log.debug('HDS URL - {0}'.format(url))
+                    count_playlist['hds'] += 1
                 except Exception as e:
-                    log.error('Skipping hds_url - {0}'.format(str(e)))
+                    log.error('Skip HDS with error {0}'.format(str(e)))
             elif parsed_url.path.endswith(('.mp3', '.mp4')):
+                if count_playlist['http'] >= playlist_max:
+                    log.debug('Skip - {0}'.format(url))
+                    continue
                 try:
                     name = 'live'
                     m = self._httpstream_bitrate_re.search(url)
                     if m:
                         name = '{0}k'.format(m.group('bitrate'))
                     yield name, HTTPStream(self.session, url)
+                    log.debug('HTTP URL - {0}'.format(url))
+                    count_playlist['http'] += 1
                 except Exception as e:
-                    log.error('Skipping http_url - {0}'.format(str(e)))
+                    log.error('Skip HTTP with error {0}'.format(str(e)))
             elif parsed_url.path.endswith(('.mpd')):
+                if count_playlist['dash'] >= playlist_max:
+                    log.debug('Skip - {0}'.format(url))
+                    continue
                 try:
                     for s in DASHStream.parse_manifest(self.session,
                                                        url).items():
                         yield s
+                    log.debug('DASH URL - {0}'.format(url))
+                    count_playlist['dash'] += 1
                 except Exception as e:
-                    log.error('Skipping mpd_url - {0}'.format(str(e)))
+                    log.error('Skip DASH with error {0}'.format(str(e)))
 
     def _res_text(self, url):
         '''Content of a website
@@ -583,7 +648,6 @@ class Resolve(Plugin):
                                                 stream_base=stream_base)
             if playlist_list:
                 log.debug('Found Playlists: {0} (valid)'.format(len(playlist_list)))
-                log.debug('Found URL: {0}'.format(', '.join(playlist_list)))
                 return self._resolve_playlist(playlist_list)
         else:
             log.debug('No Playlists')
