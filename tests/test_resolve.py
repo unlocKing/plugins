@@ -11,7 +11,6 @@ from streamlink.plugin.plugin import NO_PRIORITY
 
 from plugins.resolve import _iframe_re
 from plugins.resolve import _playlist_re
-from plugins.resolve import _rtmp_re
 from plugins.resolve import Resolve
 
 try:
@@ -164,12 +163,11 @@ data_stream = [
             <iframe src="http://mocked/default/iframe" width="650">iframe</iframe>
         """,
     },
-    # find unescape iframe and print rtmp
+    # find unescape iframe
     {
         "test_name": "iframe_unescape",
         "stream_type": "hls",
         "website_text": """
-            <video src="rtmpte://local:1935">
             <div id="player">
                 <script language='javascript'> document.write(unescape('%3Ciframe%20width%3D%22730%22%20height%3D%22440%22%20src%3D%22http%3A%2F%2Fmocked%2Fdefault%2Fiframe%22%20frameborder%3D%220%22%20gesture%3D%22media%22%20allow%3D%22encrypted-media%22%20allowfullscreen%3E%3C%2Fiframe%3E'));</script>
             </div>
@@ -695,28 +693,3 @@ class TestPluginResolve(unittest.TestCase):
 
         for data in regex_test_list:
             self.assertNotRegex(data, _playlist_re)
-
-    def test_rtmp_re(self):
-        regex_test_list = [
-            {
-                "data": """<player frameborder="0" src="rtmp://local">""",
-                "result": "rtmp://local"
-            },
-            {
-                "data": """<player frameborder="0" src="rtmpe://local?local">""",
-                "result": "rtmpe://local?local"
-            },
-            {
-                "data": """<player frameborder="0" src="rtmps://local?local">""",
-                "result": "rtmps://local?local"
-            },
-            {
-                "data": """<video src="rtmpte://local:1935">""",
-                "result": "rtmpte://local:1935"
-            },
-
-        ]
-        for test_dict in regex_test_list:
-            m = _rtmp_re.search(test_dict["data"])
-            self.assertIsNotNone(m)
-            self.assertEqual(test_dict["result"], m.group("url"))

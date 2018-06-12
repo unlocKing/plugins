@@ -39,9 +39,6 @@ _playlist_re = re.compile(r'''
     (?:["']|(?<!;)\s|>|\\&quot;)
     ''', re.DOTALL | re.VERBOSE)
 
-# Regex for rtmp
-_rtmp_re = re.compile(r'''["'](?P<url>rtmp(?:e|s|t|te)?://[^"']+)["']''')
-
 log = logging.getLogger(__name__)
 
 
@@ -536,11 +533,6 @@ class Resolve(Plugin):
 
         # GET website content
         o_res = self._res_text(self.url)
-
-        # rtmp search, will only print the url.
-        m_rtmp = _rtmp_re.search(o_res)
-        if m_rtmp:
-            log.info('Found RTMP: {0}'.format(m_rtmp.group('url')))
 
         # Playlist URL
         playlist_all = _playlist_re.findall(o_res)
