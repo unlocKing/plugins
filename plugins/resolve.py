@@ -114,6 +114,17 @@ class Resolve(Plugin):
 
     arguments = PluginArguments(
         PluginArgument(
+            'playlist-referer',
+            metavar='URL',
+            help='''
+            Set a custom referer URL for the playlist URLs.
+
+            This only affects playlist URLs of this plugin.
+
+            Default URL of the last website.
+            '''
+        ),
+        PluginArgument(
             'blacklist-netloc',
             metavar='NETLOC',
             type=comma_list,
@@ -398,7 +409,9 @@ class Resolve(Plugin):
         Returns:
             all streams
         '''
-        http.headers.update({'Referer': self.url})
+        playlist_referer = self.get_option('playlist_referer') or self.url
+        http.headers.update({'Referer': playlist_referer})
+
         for url in playlist_all:
             parsed_url = urlparse(url)
             if parsed_url.path.endswith(('.m3u8')):
@@ -448,7 +461,6 @@ class Resolve(Plugin):
             if 'Received response with content-encoding: gzip' in str(e):
                 headers = {
                     'User-Agent': useragents.FIREFOX,
-                    'Referer': self.referer,
                     'Accept-Encoding': 'deflate'
                 }
                 res = http.get(url, headers=headers, allow_redirects=True)
