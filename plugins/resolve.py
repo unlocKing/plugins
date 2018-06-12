@@ -625,8 +625,7 @@ class Resolve(Plugin):
 
         new_session_url = False
 
-        log.info('--- {0} ---'.format(self._run))
-        log.info('--- URL={0}'.format(self.url))
+        log.info('  {0}. URL={1}'.format(self._run, self.url))
 
         # GET website content
         o_res = self._res_text(self.url)
@@ -647,7 +646,7 @@ class Resolve(Plugin):
                                                 url_type='playlist',
                                                 stream_base=stream_base)
             if playlist_list:
-                log.debug('Found Playlists: {0} (valid)'.format(len(playlist_list)))
+                log.info('Found Playlists: {0} (valid)'.format(len(playlist_list)))
                 return self._resolve_playlist(playlist_list)
         else:
             log.debug('No Playlists')
@@ -667,9 +666,13 @@ class Resolve(Plugin):
                                                   self.url,
                                                   url_type='iframe')
             if new_iframe_list:
-                log.debug('Found Iframes: {0} (valid)'.format(len(new_iframe_list)))
-                log.info('URL Iframes: {0}'.format(', '.join(new_iframe_list)))
-                new_session_url = new_iframe_list[0]
+                log.info('Found Iframes: {0} (valid)'.format(len(new_iframe_list)))
+                for i_url in new_iframe_list:
+                    if i_url == new_iframe_list[0]:
+                        new_session_url = i_url
+                        log.info('IFRAME URL - {0}'.format(i_url))
+                    else:
+                        log.info('Skip - {0}'.format(i_url))
         else:
             log.debug('No Iframes')
 
