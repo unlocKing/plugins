@@ -582,6 +582,10 @@ class Resolve(Plugin):
             new_session_url = self._window_location(o_res)
 
         if new_session_url:
+            # the Dailymotion Plugin does not work with this Referer
+            if 'dailymotion.com' in new_session_url:
+                del http.headers['Referer']
+
             return self.session.streams(new_session_url)
 
         raise NoPluginError
