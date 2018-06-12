@@ -173,25 +173,6 @@ class Resolve(Plugin):
         ),
     )
 
-    def __init__(self, url):
-        super(Resolve, self).__init__(url)
-        # Remove prefix
-        self.url = self.url.replace('resolve://', '')
-        # cache every used url, this will avoid a loop
-        if hasattr(ResolveCache, 'cache_url_list'):
-            ResolveCache.cache_url_list += [self.url]
-            # set the last url as a referer
-            self.referer = ResolveCache.cache_url_list[-2]
-        else:
-            ResolveCache.cache_url_list = [self.url]
-            self.referer = self.url
-
-        self._run = len(ResolveCache.cache_url_list)
-
-        http.headers.update({'Referer': self.referer})
-        if http.headers['User-Agent'].startswith('python-requests'):
-            http.headers.update({'User-Agent': useragents.FIREFOX})
-
     @classmethod
     def priority(cls, url):
         '''
@@ -490,6 +471,27 @@ class Resolve(Plugin):
         ''' generates default options
             and caches them into ResolveCache class
         '''
+
+        # START - cache every used url and set a referer
+        if hasattr(ResolveCache, 'cache_url_list'):
+            ResolveCache.cache_url_list += [self.url]
+            # set the last url as a referer
+            self.referer = ResolveCache.cache_url_list[-2]
+        else:
+            ResolveCache.cache_url_list = [self.url]
+            self.referer = self.url
+        http.headers.update({'Referer': self.referer})
+        # END
+
+        # START - how often _get_streams already run
+        self._run = len(ResolveCache.cache_url_list)
+        # END
+
+        # START - set a default User-Agent
+        if http.headers['User-Agent'].startswith('python-requests'):
+            http.headers.update({'User-Agent': useragents.FIREFOX})
+        # END
+
         # START - List for not allowed URL Paths
         # --resolve-blacklist-path
         if not hasattr(ResolveCache, 'blacklist_path'):
@@ -535,6 +537,10 @@ class Resolve(Plugin):
         Raises:
             NoPluginError: if no video was found.
         '''
+        # Remove prefix
+        self.url = self.url.replace('resolve://', '')
+        self.url = update_scheme('http://', self.url)
+
         self._set_defaults()
         if self._run <= 1:
             log.info('This is a custom plugin. '
@@ -542,7 +548,6 @@ class Resolve(Plugin):
 
         new_session_url = False
 
-        self.url = update_scheme('http://', self.url)
         log.info('--- {0} ---'.format(self._run))
         log.info('--- URL={0}'.format(self.url))
 
