@@ -4,13 +4,10 @@ import unittest
 
 from streamlink import Streamlink
 from streamlink.compat import urlparse
-from streamlink.logger import Logger
 from streamlink.plugin import api
 from streamlink.plugin.plugin import HIGH_PRIORITY
 from streamlink.plugin.plugin import NO_PRIORITY
 
-from plugins.resolve import _iframe_re
-from plugins.resolve import _playlist_re
 from plugins.resolve import Resolve
 
 try:
@@ -558,7 +555,7 @@ class TestPluginResolve(unittest.TestCase):
             },
         ]
         for test_dict in test_list:
-            result_url_list = _iframe_re.findall(test_dict["data"])
+            result_url_list = self.res_plugin._iframe_re.findall(test_dict["data"])
             self.assertIsNotNone(result_url_list)
             self.assertListEqual(sorted(test_dict["result"]), sorted(result_url_list))
 
@@ -576,7 +573,7 @@ class TestPluginResolve(unittest.TestCase):
             self.assertNotRegex = self.assertNotRegexpMatches
 
         for data in regex_test_list:
-            self.assertNotRegex(data, _iframe_re)
+            self.assertNotRegex(data, self.res_plugin._iframe_re)
 
     def test_playlist_re(self):
         regex_test_list = [
@@ -669,7 +666,7 @@ class TestPluginResolve(unittest.TestCase):
             },
         ]
         for test_dict in regex_test_list:
-            m = _playlist_re.search(test_dict["data"])
+            m = self.res_plugin._playlist_re.search(test_dict["data"])
             self.assertIsNotNone(m)
             self.assertEqual(test_dict["result"], m.group("url"))
 
@@ -699,4 +696,4 @@ class TestPluginResolve(unittest.TestCase):
             self.assertNotRegex = self.assertNotRegexpMatches
 
         for data in regex_test_list:
-            self.assertNotRegex(data, _playlist_re)
+            self.assertNotRegex(data, self.res_plugin._playlist_re)

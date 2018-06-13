@@ -22,24 +22,6 @@ from streamlink.stream import HTTPStream
 from streamlink.stream.dash import DASHStream
 from streamlink.utils import update_scheme
 
-# Regex for iFrames
-_iframe_re = re.compile(r'''
-    <ifr(?:["']\s?\+\s?["'])?ame
-    (?!\sname=["']g_iFrame).*?src=
-    ["'](?P<url>[^"'\s<>]+)["']
-    .*?(?:/>|>(?:[^<>]+)?
-    </ifr(?:["']\s?\+\s?["'])?ame(?:\s+)?>)
-    ''', re.VERBOSE | re.IGNORECASE | re.DOTALL)
-
-# Regex for playlist files
-_playlist_re = re.compile(r'''
-    (?:["']|=|&quot;)(?P<url>
-        (?<!title=["'])
-            [^"'<>\s\;{}]+\.(?:m3u8|f4m|mp3|mp4|mpd)
-        (?:\?[^"'<>\s\\{}]+)?)
-    (?:["']|(?<!;)\s|>|\\&quot;)
-    ''', re.DOTALL | re.VERBOSE)
-
 log = logging.getLogger(__name__)
 
 
@@ -99,8 +81,28 @@ class Resolve(Plugin):
     '''
 
     _url_re = re.compile(r'''(resolve://)?(?P<url>.+)''')
+
+    # regex for iframes
+    _iframe_re = re.compile(r'''
+        <ifr(?:["']\s?\+\s?["'])?ame
+        (?!\sname=["']g_iFrame).*?src=
+        ["'](?P<url>[^"'\s<>]+)["']
+        .*?(?:/>|>(?:[^<>]+)?
+        </ifr(?:["']\s?\+\s?["'])?ame(?:\s+)?>)
+        ''', re.VERBOSE | re.IGNORECASE | re.DOTALL)
+
+    # regex for playlists
+    _playlist_re = re.compile(r'''
+        (?:["']|=|&quot;)(?P<url>
+            (?<!title=["'])
+                [^"'<>\s\;{}]+\.(?:m3u8|f4m|mp3|mp4|mpd)
+            (?:\?[^"'<>\s\\{}]+)?)
+        (?:["']|(?<!;)\s|>|\\&quot;)
+        ''', re.DOTALL | re.VERBOSE)
+
     # Regex for: .mp3 and mp4 files
     _httpstream_bitrate_re = re.compile(r'''_(?P<bitrate>\d{1,4})\.mp(?:3|4)''')
+
     # Regex for: javascript redirection
     _window_location_re = re.compile(
         r'''<script[^<]+window\.location\.href\s?=\s?["'](?P<url>[^"']+)["'];[^<>]+''',
@@ -108,6 +110,7 @@ class Resolve(Plugin):
     _unescape_iframe_re = re.compile(
         r'''unescape\050["'](?P<data>%3C(?:iframe|%69%66%72%61%6d%65)%20[^"']+)["']''',
         re.IGNORECASE)
+
     # Regex for obviously ad paths
     _ads_path = re.compile(
         r'''(?:/(?:static|\d+))?/ads?/?(?:\w+)?(?:\d+x\d+)?(?:_\w+)?\.(?:html?|php)''')
@@ -403,7 +406,7 @@ class Resolve(Plugin):
             for data in unescape_iframe:
                 unescape_text += [unquote(data)]
             unescape_text = ','.join(unescape_text)
-            unescape_iframe = _iframe_re.findall(unescape_text)
+            unescape_iframe = self._iframe_re.findall(unescape_text)
             if unescape_iframe:
                 log.debug('Found {0} unescape_iframe'.format(len(unescape_iframe)))
                 return unescape_iframe
@@ -625,7 +628,7 @@ class Resolve(Plugin):
         o_res = self._res_text(self.url)
 
         # Playlist URL
-        playlist_all = _playlist_re.findall(o_res)
+        playlist_all = self._playlist_re.findall(o_res)
         if playlist_all:
             log.debug('Found Playlists: {0}'.format(len(playlist_all)))
             playlist_list = self._make_url_list(playlist_all,
@@ -640,7 +643,7 @@ class Resolve(Plugin):
 
         # iFrame URL
         iframe_list = []
-        for _iframe_list in (_iframe_re.findall(o_res),
+        for _iframe_list in (self._iframe_re.findall(o_res),
                              self._iframe_unescape(o_res)):
             if not _iframe_list:
                 continue
