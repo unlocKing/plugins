@@ -101,10 +101,6 @@ class Resolve(Plugin):
     _url_re = re.compile(r'''(resolve://)?(?P<url>.+)''')
     # Regex for: .mp3 and mp4 files
     _httpstream_bitrate_re = re.compile(r'''_(?P<bitrate>\d{1,4})\.mp(?:3|4)''')
-    # Regex for: streamBasePath for .f4m urls
-    _stream_base_re = re.compile(
-        r'''streamBasePath\s?(?::|=)\s?["'](?P<base>[^"']+)["']''',
-        re.IGNORECASE)
     # Regex for: javascript redirection
     _window_location_re = re.compile(
         r'''<script[^<]+window\.location\.href\s?=\s?["'](?P<url>[^"']+)["'];[^<>]+''',
@@ -282,7 +278,7 @@ class Resolve(Plugin):
                 static += [(_parsed_path_url.netloc, _parsed_path_url.path)]
         return static
 
-    def repair_url(self, url, base_url, stream_base):
+    def repair_url(self, url, base_url, stream_base=''):
         '''repair a broken url'''
         # remove \
         new_url = url.replace('\\', '')
@@ -301,7 +297,7 @@ class Resolve(Plugin):
             new_url = urljoin(base_url, new_url)
         return new_url
 
-    def _make_url_list(self, old_list, base_url, url_type='', stream_base=''):
+    def _make_url_list(self, old_list, base_url, url_type=''):
         '''creates a list of valid urls
            - removes unwanted urls
 
@@ -312,8 +308,6 @@ class Resolve(Plugin):
                 - iframe
                     --resolve-whitelist-netloc
                 - playlist
-
-            stream_base: basically same as base_url, but used for .f4m files.
 
         Returns:
             (list) A new valid list of urls.
@@ -334,7 +328,7 @@ class Resolve(Plugin):
 
         new_list = []
         for url in old_list:
-            new_url = self.repair_url(url, base_url, stream_base)
+            new_url = self.repair_url(url, base_url)
             # parse the url
             parse_new_url = urlparse(new_url)
 
@@ -634,17 +628,10 @@ class Resolve(Plugin):
         playlist_all = _playlist_re.findall(o_res)
         if playlist_all:
             log.debug('Found Playlists: {0}'.format(len(playlist_all)))
-            # m_base is used for .f4m files that doesn't have a base_url
-            m_base = self._stream_base_re.search(o_res)
-            if m_base:
-                stream_base = m_base.group('base')
-            else:
-                stream_base = ''
-
             playlist_list = self._make_url_list(playlist_all,
                                                 self.url,
                                                 url_type='playlist',
-                                                stream_base=stream_base)
+                                                )
             if playlist_list:
                 log.info('Found Playlists: {0} (valid)'.format(len(playlist_list)))
                 return self._resolve_playlist(playlist_list)
