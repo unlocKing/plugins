@@ -57,28 +57,15 @@ def num(type, min=None, max=None):
 
 
 class ResolveCache:
-    '''used as temporary url cache
+    '''used as temporary session cache
+       - ResolveCache.blacklist_path
        - ResolveCache.cache_url_list
+       - ResolveCache.whitelist_path
     '''
     pass
 
 
 class Resolve(Plugin):
-    '''Plugin that will try to find a valid streamurl on every website
-
-    Supported
-        - embedded url of an already existing plugin
-        - website with an unencrypted fileurl in there source code,
-          DASH, HDS, HLS and HTTP
-
-    Unsupported
-        - websites with RTMP
-          it will show the url in the debug log, but won't try to start it.
-        - streams that require
-            - an authentication
-            - an API
-        - streams that are hidden behind javascript or other encryption
-    '''
 
     _url_re = re.compile(r'''(resolve://)?(?P<url>.+)''')
 
@@ -247,8 +234,9 @@ class Resolve(Plugin):
         '''compare a parsed url, if it matches an item from a list
 
         Args:
-           parsed_url: an url that was used with urlparse
-           check_list: a list of urls that should get checked
+           parsed_url: an URL that was used with urlparse
+           check_list: a list of URLs as a tuple
+                       [('foo.bar', '/path/'), ('foo2.bar', '/path/')]
 
         Returns:
             True
@@ -301,17 +289,16 @@ class Resolve(Plugin):
         return new_url
 
     def _make_url_list(self, old_list, base_url, url_type=''):
-        '''creates a list of valid urls
-           - removes unwanted urls
+        '''removes unwanted URLs and creates a list of valid URLs
 
         Args:
-            old_list: list of urls
-            base_url: url that will get used for scheme and netloc repairs
+            old_list: list of URLs
+            base_url: URL that will get used for scheme and netloc repairs
             url_type: can be ... and is used for ...
                 - iframe
                     --resolve-whitelist-netloc
                 - playlist
-
+                    Not used
         Returns:
             (list) A new valid list of urls.
         '''
@@ -388,11 +375,11 @@ class Resolve(Plugin):
         new_list = sorted(list(set(new_list)))
         return new_list
 
-    def _iframe_unescape(self, res):
+    def _iframe_unescape(self, res_text):
         '''Try to find iframes from unescape('%3Ciframe%20
 
         Args:
-            res: Content from self._res_text
+            res_text: Content from self._res_text
 
         Returns:
             (list) A list of iframe urls
@@ -400,7 +387,7 @@ class Resolve(Plugin):
             False
                 if no iframe was found
         '''
-        unescape_iframe = self._unescape_iframe_re.findall(res)
+        unescape_iframe = self._unescape_iframe_re.findall(res_text)
         if unescape_iframe:
             unescape_text = []
             for data in unescape_iframe:
@@ -408,16 +395,16 @@ class Resolve(Plugin):
             unescape_text = ','.join(unescape_text)
             unescape_iframe = self._iframe_re.findall(unescape_text)
             if unescape_iframe:
-                log.debug('Found {0} unescape_iframe'.format(len(unescape_iframe)))
+                log.debug('Found unescape_iframe: {0}'.format(len(unescape_iframe)))
                 return unescape_iframe
         log.debug('No unescape_iframe')
         return False
 
-    def _window_location(self, res):
+    def _window_location(self, res_text):
         '''Try to find a script with window.location.href
 
         Args:
-            res: Content from self._res_text
+            res_text: Content from self._res_text
 
         Returns:
             (str) url
@@ -426,7 +413,7 @@ class Resolve(Plugin):
                 if no url was found.
         '''
 
-        match = self._window_location_re.search(res)
+        match = self._window_location_re.search(res_text)
         if match:
             temp_url = urljoin(self.url, match.group('url'))
             log.debug('Found window_location: {0}'.format(temp_url))
@@ -602,16 +589,6 @@ class Resolve(Plugin):
         # END
 
     def _get_streams(self):
-        '''Try to find streams on every website.
-
-        Returns:
-            Playable video
-                or
-            New session url
-        Raises:
-            NoPluginError: if no video was found.
-        '''
-        # Remove prefix
         self.url = self.url.replace('resolve://', '')
         self.url = update_scheme('http://', self.url)
 
@@ -625,10 +602,10 @@ class Resolve(Plugin):
         log.info('  {0}. URL={1}'.format(self._run, self.url))
 
         # GET website content
-        o_res = self._res_text(self.url)
+        res_text = self._res_text(self.url)
 
         # Playlist URL
-        playlist_all = self._playlist_re.findall(o_res)
+        playlist_all = self._playlist_re.findall(res_text)
         if playlist_all:
             log.debug('Found Playlists: {0}'.format(len(playlist_all)))
             playlist_list = self._make_url_list(playlist_all,
@@ -643,8 +620,8 @@ class Resolve(Plugin):
 
         # iFrame URL
         iframe_list = []
-        for _iframe_list in (self._iframe_re.findall(o_res),
-                             self._iframe_unescape(o_res)):
+        for _iframe_list in (self._iframe_re.findall(res_text),
+                             self._iframe_unescape(res_text)):
             if not _iframe_list:
                 continue
             iframe_list += _iframe_list
@@ -668,7 +645,7 @@ class Resolve(Plugin):
 
         if not new_session_url:
             # search for window.location.href
-            new_session_url = self._window_location(o_res)
+            new_session_url = self._window_location(res_text)
 
         if new_session_url:
             # the Dailymotion Plugin does not work with this Referer
