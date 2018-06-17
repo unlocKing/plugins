@@ -374,7 +374,7 @@ class Resolve(Plugin):
         return new_list
 
     def _iframe_unescape(self, res_text):
-        '''Try to find iframes from unescape('%3Ciframe%20
+        '''search for unescaped iframes
 
         Args:
             res_text: Content from self._res_text
@@ -441,7 +441,8 @@ class Resolve(Plugin):
         }
         for url in playlist_all:
             parsed_url = urlparse(url)
-            if parsed_url.path.endswith(('.m3u8')):
+            if (parsed_url.path.endswith(('.m3u8'))
+                    or parsed_url.query.endswith(('.m3u8'))):
                 if count_playlist['hls'] >= playlist_max:
                     log.debug('Skip - {0}'.format(url))
                     continue
@@ -455,7 +456,8 @@ class Resolve(Plugin):
                     count_playlist['hls'] += 1
                 except Exception as e:
                     log.error('Skip HLS with error {0}'.format(str(e)))
-            elif parsed_url.path.endswith(('.f4m')):
+            elif (parsed_url.path.endswith(('.f4m'))
+                    or parsed_url.query.endswith(('.f4m'))):
                 if count_playlist['hds'] >= playlist_max:
                     log.debug('Skip - {0}'.format(url))
                     continue
@@ -466,7 +468,8 @@ class Resolve(Plugin):
                     count_playlist['hds'] += 1
                 except Exception as e:
                     log.error('Skip HDS with error {0}'.format(str(e)))
-            elif parsed_url.path.endswith(('.mp3', '.mp4')):
+            elif (parsed_url.path.endswith(('.mp3', '.mp4'))
+                    or parsed_url.query.endswith(('.mp3', '.mp4'))):
                 if count_playlist['http'] >= playlist_max:
                     log.debug('Skip - {0}'.format(url))
                     continue
@@ -480,7 +483,8 @@ class Resolve(Plugin):
                     count_playlist['http'] += 1
                 except Exception as e:
                     log.error('Skip HTTP with error {0}'.format(str(e)))
-            elif parsed_url.path.endswith(('.mpd')):
+            elif (parsed_url.path.endswith(('.mpd'))
+                    or parsed_url.query.endswith(('.mpd'))):
                 if count_playlist['dash'] >= playlist_max:
                     log.debug('Skip - {0}'.format(url))
                     continue
