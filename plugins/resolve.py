@@ -3,22 +3,12 @@ import argparse
 import logging
 import re
 
-from streamlink import NoPluginError
-from streamlink import NoStreamsError
-from streamlink.compat import is_py2
-from streamlink.compat import unquote
-from streamlink.compat import urljoin
-from streamlink.compat import urlparse
-from streamlink.plugin import Plugin
-from streamlink.plugin import PluginArgument
-from streamlink.plugin import PluginArguments
-from streamlink.plugin.api import http
-from streamlink.plugin.api import useragents
-from streamlink.plugin.plugin import HIGH_PRIORITY
-from streamlink.plugin.plugin import NO_PRIORITY
-from streamlink.stream import HDSStream
-from streamlink.stream import HLSStream
-from streamlink.stream import HTTPStream
+from streamlink import NoPluginError, NoStreamsError
+from streamlink.compat import is_py2, unquote, urljoin, urlparse
+from streamlink.plugin import Plugin, PluginArgument, PluginArguments
+from streamlink.plugin.api import http, useragents
+from streamlink.plugin.plugin import HIGH_PRIORITY, NO_PRIORITY
+from streamlink.stream import HDSStream, HLSStream, HTTPStream
 from streamlink.stream.dash import DASHStream
 from streamlink.utils import update_scheme
 
