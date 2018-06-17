@@ -89,8 +89,12 @@ class Resolve(Plugin):
         re.IGNORECASE)
 
     # Regex for obviously ad paths
-    _ads_path = re.compile(
-        r'''(?:/(?:static|\d+))?/ads?/?(?:\w+)?(?:\d+x\d+)?(?:_\w+)?\.(?:html?|php)''')
+    _ads_path_re = re.compile(r'''
+        (?:/(?:static|\d+))?
+        /ads?/?(?:\w+)?
+        (?:\d+x\d+)?
+        (?:_\w+)?\.(?:html?|php)
+        ''', re.VERBOSE)
 
     # START - _make_url_list
     # Not allowed at the end of the parsed url path
@@ -345,7 +349,7 @@ class Resolve(Plugin):
                     # Removes unwanted endswith images and chatrooms
                     (parse_new_url.path.endswith(self.blacklist_endswith)),
                     # Removes obviously AD URL
-                    (self._ads_path.match(parse_new_url.path)),
+                    (self._ads_path_re.match(parse_new_url.path)),
             ):
 
                 count += 1

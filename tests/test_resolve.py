@@ -422,7 +422,7 @@ class TestPluginResolve(unittest.TestCase):
             m = self.res_plugin._window_location(test_res)
             self.assertFalse(m)
 
-    def test_regex_ads_path(self):
+    def test_regex_ads_path_re(self):
         regex_test_list = [
             "/ad.php",
             "/ad20.php",
@@ -442,7 +442,7 @@ class TestPluginResolve(unittest.TestCase):
             "/static/ads468x60.html",
         ]
         for test_url in regex_test_list:
-            m = self.res_plugin._ads_path.match(test_url)
+            m = self.res_plugin._ads_path_re.match(test_url)
             self.assertIsNotNone(m)
 
     def test_iframe_re(self):
