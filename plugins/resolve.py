@@ -526,7 +526,7 @@ class Resolve(Plugin):
             log.debug('URL: {0}'.format(res.url))
         return res.text
 
-    def _set_defaults(self):
+    def settings_defaults(self):
         ''' generates default options
             and caches them into ResolveCache class
         '''
@@ -552,6 +552,7 @@ class Resolve(Plugin):
 
             # static list
             blacklist_path = [
+                ('bigo.tv', '/show.mp4'),
                 ('expressen.se', '/_livetvpreview/'),
                 ('facebook.com', '/connect'),
                 ('facebook.com', '/plugins'),
@@ -581,14 +582,13 @@ class Resolve(Plugin):
             ResolveCache.whitelist_path = whitelist_path
         # END
 
-    def update_useragent(self):
+    def settings_url(self):
         '''
-         set the default User-Agent for this plugin to Firefox
-         or set a different User-Agent for specific websites.
+        store custom settings for URLs
         '''
-
         o = urlparse(self.url)
 
+        # User-Agent
         _android = []
         _chrome = []
         _ipad = []
@@ -608,14 +608,26 @@ class Resolve(Plugin):
         elif o.netloc.endswith(tuple(_iphone)):
             http.headers.update({'User-Agent': useragents.IPHONE_6})
         else:
+            # default User-Agent
             http.headers.update({'User-Agent': useragents.FIREFOX})
+
+        # SSL Verification - http.verify
+        http_verify = [
+            # https://github.com/streamlink/streamlink/issues/1494
+            '.cdn.bg',
+            'sportal.bg',
+        ]
+        if (o.netloc.endswith(tuple(http_verify)) and http.verify):
+            http.verify = False
+            log.warning('SSL Verification disabled.')
 
     def _get_streams(self):
         self.url = self.url.replace('resolve://', '')
         self.url = update_scheme('http://', self.url)
 
-        self.update_useragent()
-        self._set_defaults()
+        self.settings_url()
+        self.settings_defaults()
+
         if self._run <= 1:
             log.info('This is a custom plugin. '
                      'For support visit https://github.com/back-to/plugins')
