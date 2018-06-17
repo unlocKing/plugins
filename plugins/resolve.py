@@ -496,6 +496,8 @@ class Resolve(Plugin):
                     count_playlist['dash'] += 1
                 except Exception as e:
                     log.error('Skip DASH with error {0}'.format(str(e)))
+            else:
+                log.error('parsed URL - {0}'.format(url))
 
     def _res_text(self, url):
         '''Content of a website
