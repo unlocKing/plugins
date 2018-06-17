@@ -548,11 +548,6 @@ class Resolve(Plugin):
         self._run = len(ResolveCache.cache_url_list)
         # END
 
-        # START - set a default User-Agent
-        if http.headers['User-Agent'].startswith('python-requests'):
-            http.headers.update({'User-Agent': useragents.FIREFOX})
-        # END
-
         # START - List for not allowed URL Paths
         # --resolve-blacklist-path
         if not hasattr(ResolveCache, 'blacklist_path'):
@@ -588,14 +583,45 @@ class Resolve(Plugin):
             ResolveCache.whitelist_path = whitelist_path
         # END
 
+    def update_useragent(self):
+        '''
+         set the default User-Agent for this plugin to Firefox
+         or set a different User-Agent for specific websites.
+        '''
+
+        o = urlparse(self.url)
+
+        _android = []
+        _chrome = []
+        _ipad = []
+        _iphone = [
+            'bigo.tv',
+        ]
+
+        if not http.headers['User-Agent'].startswith('python-requests'):
+            return
+
+        if o.netloc.endswith(tuple(_android)):
+            http.headers.update({'User-Agent': useragents.ANDROID})
+        elif o.netloc.endswith(tuple(_chrome)):
+            http.headers.update({'User-Agent': useragents.CHROME})
+        elif o.netloc.endswith(tuple(_ipad)):
+            http.headers.update({'User-Agent': useragents.IPAD})
+        elif o.netloc.endswith(tuple(_iphone)):
+            http.headers.update({'User-Agent': useragents.IPHONE_6})
+        else:
+            http.headers.update({'User-Agent': useragents.FIREFOX})
+
     def _get_streams(self):
         self.url = self.url.replace('resolve://', '')
         self.url = update_scheme('http://', self.url)
 
+        self.update_useragent()
         self._set_defaults()
         if self._run <= 1:
             log.info('This is a custom plugin. '
                      'For support visit https://github.com/back-to/plugins')
+            log.debug('User-Agent: {0}'.format(http.headers['User-Agent']))
 
         new_session_url = False
 
