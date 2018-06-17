@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import argparse
 import logging
 import re
 
@@ -26,18 +25,20 @@ def num(type, min=None, max=None):
         value = type(value)
 
         if min is not None and not (value > min):
-            raise argparse.ArgumentTypeError(
-                "{0} value must be more than {1} but is {2}".format(
+            log.error(
+                '{0} value must be more than {1} but is {2}'.format(
                     type.__name__, min, value
                 )
             )
+            raise ValueError
 
         if max is not None and not (value <= max):
-            raise argparse.ArgumentTypeError(
-                "{0} value must be at most {1} but is {2}".format(
+            log.error(
+                '{0} value must be at most {1} but is {2}'.format(
                     type.__name__, max, value
                 )
             )
+            raise ValueError
 
         return value
 
