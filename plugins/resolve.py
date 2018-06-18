@@ -211,6 +211,27 @@ class Resolve(Plugin):
         ),
     )
 
+    def __init__(self, url):
+        super(Resolve, self).__init__(url)
+        ''' generates default options
+            and caches them into ResolveCache class
+        '''
+
+        # START - cache every used url and set a referer
+        if hasattr(ResolveCache, 'cache_url_list'):
+            ResolveCache.cache_url_list += [self.url]
+            # set the last url as a referer
+            self.referer = ResolveCache.cache_url_list[-2]
+        else:
+            ResolveCache.cache_url_list = [self.url]
+            self.referer = self.url
+        http.headers.update({'Referer': self.referer})
+        # END
+
+        # START - how often _get_streams already run
+        self._run = len(ResolveCache.cache_url_list)
+        # END
+
     @classmethod
     def priority(cls, url):
         '''
@@ -305,6 +326,41 @@ class Resolve(Plugin):
         Returns:
             (list) A new valid list of urls.
         '''
+        # START - List for not allowed URL Paths
+        # --resolve-blacklist-path
+        if not hasattr(ResolveCache, 'blacklist_path'):
+
+            # static list
+            blacklist_path = [
+                ('bigo.tv', '/show.mp4'),
+                ('expressen.se', '/_livetvpreview/'),
+                ('facebook.com', '/connect'),
+                ('facebook.com', '/plugins'),
+                ('haber7.com', '/radyohome/station-widget/'),
+                ('static.tvr.by', '/upload/video/atn/promo'),
+                ('twitter.com', '/widgets'),
+                ('vesti.ru', '/native_widget.html'),
+            ]
+
+            # merge user and static list
+            blacklist_path_user = self.get_option('blacklist_path')
+            if blacklist_path_user is not None:
+                blacklist_path = self.merge_path_list(
+                    blacklist_path, blacklist_path_user)
+
+            ResolveCache.blacklist_path = blacklist_path
+        # END
+
+        # START - List of only allowed URL Paths for Iframes
+        # --resolve-whitelist-path
+        if not hasattr(ResolveCache, 'whitelist_path'):
+            whitelist_path = []
+            whitelist_path_user = self.get_option('whitelist_path')
+            if whitelist_path_user is not None:
+                whitelist_path = self.merge_path_list(
+                    [], whitelist_path_user)
+            ResolveCache.whitelist_path = whitelist_path
+        # END
 
         # sorted after the way streamlink will try to remove an url
         status_remove = [
@@ -537,62 +593,6 @@ class Resolve(Plugin):
             log.debug('URL: {0}'.format(res.url))
         return res.text
 
-    def settings_defaults(self):
-        ''' generates default options
-            and caches them into ResolveCache class
-        '''
-
-        # START - cache every used url and set a referer
-        if hasattr(ResolveCache, 'cache_url_list'):
-            ResolveCache.cache_url_list += [self.url]
-            # set the last url as a referer
-            self.referer = ResolveCache.cache_url_list[-2]
-        else:
-            ResolveCache.cache_url_list = [self.url]
-            self.referer = self.url
-        http.headers.update({'Referer': self.referer})
-        # END
-
-        # START - how often _get_streams already run
-        self._run = len(ResolveCache.cache_url_list)
-        # END
-
-        # START - List for not allowed URL Paths
-        # --resolve-blacklist-path
-        if not hasattr(ResolveCache, 'blacklist_path'):
-
-            # static list
-            blacklist_path = [
-                ('bigo.tv', '/show.mp4'),
-                ('expressen.se', '/_livetvpreview/'),
-                ('facebook.com', '/connect'),
-                ('facebook.com', '/plugins'),
-                ('haber7.com', '/radyohome/station-widget/'),
-                ('static.tvr.by', '/upload/video/atn/promo'),
-                ('twitter.com', '/widgets'),
-                ('vesti.ru', '/native_widget.html'),
-            ]
-
-            # merge user and static list
-            blacklist_path_user = self.get_option('blacklist_path')
-            if blacklist_path_user is not None:
-                blacklist_path = self.merge_path_list(
-                    blacklist_path, blacklist_path_user)
-
-            ResolveCache.blacklist_path = blacklist_path
-        # END
-
-        # START - List of only allowed URL Paths for Iframes
-        # --resolve-whitelist-path
-        if not hasattr(ResolveCache, 'whitelist_path'):
-            whitelist_path = []
-            whitelist_path_user = self.get_option('whitelist_path')
-            if whitelist_path_user is not None:
-                whitelist_path = self.merge_path_list(
-                    [], whitelist_path_user)
-            ResolveCache.whitelist_path = whitelist_path
-        # END
-
     def settings_url(self):
         '''
         store custom settings for URLs
@@ -637,7 +637,6 @@ class Resolve(Plugin):
         self.url = update_scheme('http://', self.url)
 
         self.settings_url()
-        self.settings_defaults()
 
         if self._run <= 1:
             log.info('This is a custom plugin. '
