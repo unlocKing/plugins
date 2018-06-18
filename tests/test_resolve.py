@@ -170,16 +170,6 @@ data_stream = [
             </div>
         """,
     },
-    # find window.location.href
-    {
-        "test_name": "iframe_unescape",
-        "stream_type": "hls",
-        "website_text": """
-            <script type="text/javascript">
-            window.location.href = 'http://mocked/default/iframe';
-            </script>
-        """,
-    },
 ]
 
 stream_data = {
@@ -750,3 +740,27 @@ class TestPluginResolve(unittest.TestCase):
 
         for data in regex_test_list:
             self.assertNotRegex(data, self.res_plugin._httpstream_bitrate_re)
+
+    def test_window_location_re(self):
+        regex_test_list = [
+            {
+                "data": """
+                    <script type="text/javascript">
+                    window.location.href = 'http://mocked/default/iframe';
+                    </script>
+                """,
+                "result": "http://mocked/default/iframe",
+            },
+            {
+                "data": """
+                    <script type="text/javascript">
+                    window.location.href = "http://mocked/default/iframe2";
+                    </script>
+                """,
+                "result": "http://mocked/default/iframe2",
+            },
+        ]
+        for test_dict in regex_test_list:
+            m = self.res_plugin._window_location_re.search(test_dict["data"])
+            self.assertIsNotNone(m)
+            self.assertEqual(test_dict["result"], m.group("url"))
