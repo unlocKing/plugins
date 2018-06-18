@@ -553,6 +553,13 @@ class TestPluginResolve(unittest.TestCase):
                     """,
                 "result": ["https://example.com/123.php"]
             },
+            {
+                "data": """
+                        <iframe width="720" height="405" src="//rutube.ru/play/embed/11063587" frameborder="0"
+                            webkitAllowFullScreen mozallowfullscreen allowfullscreen></iframe>
+                        """,
+                "result": ["//rutube.ru/play/embed/11063587"]
+            },
         ]
         for test_dict in test_list:
             result_url_list = self.res_plugin._iframe_re.findall(test_dict["data"])
@@ -664,6 +671,12 @@ class TestPluginResolve(unittest.TestCase):
                         """,
                 "result": "https://example.com/hls/video.m3u8?p"
             },
+            {
+                "data": """
+                        data-stream="https://example.com/livestream?url=/live/24.m3u8"
+                        """,
+                "result": "https://example.com/livestream?url=/live/24.m3u8"
+            },
         ]
         for test_dict in regex_test_list:
             m = self.res_plugin._playlist_re.search(test_dict["data"])
@@ -697,3 +710,43 @@ class TestPluginResolve(unittest.TestCase):
 
         for data in regex_test_list:
             self.assertNotRegex(data, self.res_plugin._playlist_re)
+
+    def test_httpstream_bitrate_re(self):
+        regex_test_list = [
+            {
+                "data": "http://example.com/video_100.mp4",
+                "result": "100",
+            },
+            {
+                "data": "http://example.com/video_2000.mp4",
+                "result": "2000",
+            },
+            {
+                "data": "http://example.com/audio_300.mp3",
+                "result": "300",
+            },
+            {
+                "data": "http://example.com/audio_4000.mp3",
+                "result": "4000",
+            },
+            {
+                "data": "http://example.com/video.5500.mp4",
+                "result": "5500",
+            },
+        ]
+        for test_dict in regex_test_list:
+            m = self.res_plugin._httpstream_bitrate_re.search(test_dict["data"])
+            self.assertIsNotNone(m)
+            self.assertEqual(test_dict["result"], m.group("bitrate"))
+
+        regex_test_list = [
+            """http://example.com/video_555500.mp4""",
+            """http://example.com/video.555500.mp4""",
+            """http://example.com/video500.mp4""",
+            """http://example.com/video555500.mp4""",
+        ]
+        if not hasattr(self, 'assertNotRegex'):
+            self.assertNotRegex = self.assertNotRegexpMatches
+
+        for data in regex_test_list:
+            self.assertNotRegex(data, self.res_plugin._httpstream_bitrate_re)

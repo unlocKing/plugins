@@ -78,8 +78,12 @@ class Resolve(Plugin):
         (?:["']|(?<!;)\s|>|\\&quot;)
         ''', re.DOTALL | re.VERBOSE)
 
-    # Regex for: .mp3 and mp4 files
-    _httpstream_bitrate_re = re.compile(r'''_(?P<bitrate>\d{1,4})\.mp(?:3|4)''')
+    # regex for mp3 and mp4 files
+    _httpstream_bitrate_re = re.compile(r'''
+        (?:_|\.)
+        (?P<bitrate>\d{1,4})
+        \.mp(?:3|4)
+        ''', re.VERBOSE)
 
     # Regex for: javascript redirection
     _window_location_re = re.compile(r'''
