@@ -1,5 +1,8 @@
 # back-to/plugins
 
+Every plugin is build for the **latest version** of **Streamlink** when it was created,
+don't expect them to work with the **stable version**.
+
 - Issue Tracker: https://github.com/back-to/plugins/issues
 - Github: https://github.com/back-to/plugins
 
