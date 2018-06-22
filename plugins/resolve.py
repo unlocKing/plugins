@@ -81,7 +81,11 @@ class Resolve(Plugin):
     # regex for mp3 and mp4 files
     _httpstream_bitrate_re = re.compile(r'''
         (?:_|\.)
-        (?P<bitrate>\d{1,4})
+        (?:
+            (?P<bitrate>\d{1,4})
+            |
+            (?P<resolution>\d{1,4}p)
+        )
         \.mp(?:3|4)
         ''', re.VERBOSE)
 
@@ -535,10 +539,15 @@ class Resolve(Plugin):
                     log.debug('Skip - {0}'.format(url))
                     continue
                 try:
-                    name = 'live'
+                    name = 'vod'
                     m = self._httpstream_bitrate_re.search(url)
                     if m:
-                        name = '{0}k'.format(m.group('bitrate'))
+                        bitrate = m.group('bitrate')
+                        resolution = m.group('resolution')
+                        if bitrate:
+                            name = '{0}k'.format(m.group('bitrate'))
+                        elif resolution:
+                            name = resolution
                     yield name, HTTPStream(self.session, url)
                     log.debug('HTTP URL - {0}'.format(url))
                     count_playlist['http'] += 1

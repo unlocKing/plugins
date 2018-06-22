@@ -696,29 +696,44 @@ class TestPluginResolve(unittest.TestCase):
         regex_test_list = [
             {
                 "data": "http://example.com/video_100.mp4",
+                "group": "bitrate",
                 "result": "100",
             },
             {
                 "data": "http://example.com/video_2000.mp4",
+                "group": "bitrate",
                 "result": "2000",
             },
             {
                 "data": "http://example.com/audio_300.mp3",
+                "group": "bitrate",
                 "result": "300",
             },
             {
                 "data": "http://example.com/audio_4000.mp3",
+                "group": "bitrate",
                 "result": "4000",
             },
             {
                 "data": "http://example.com/video.5500.mp4",
+                "group": "bitrate",
                 "result": "5500",
+            },
+            {
+                "data": "https://example.com/videos/video.360p.mp4?h=ID",
+                "group": "resolution",
+                "result": "360p"
+            },
+            {
+                "data": "https://example.com/videos/video.1080p.mp4?j=ID",
+                "group": "resolution",
+                "result": "1080p"
             },
         ]
         for test_dict in regex_test_list:
             m = self.res_plugin._httpstream_bitrate_re.search(test_dict["data"])
             self.assertIsNotNone(m)
-            self.assertEqual(test_dict["result"], m.group("bitrate"))
+            self.assertEqual(test_dict["result"], m.group(test_dict["group"]))
 
         regex_test_list = [
             """http://example.com/video_555500.mp4""",
