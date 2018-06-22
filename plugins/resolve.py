@@ -73,6 +73,7 @@ class Resolve(Plugin):
     _playlist_re = re.compile(r'''
         (?:["']|=|&quot;)(?P<url>
             (?<!title=["'])
+            (?<!["']title["']:["'])
                 [^"'<>\s\;{}]+\.(?:m3u8|f4m|mp3|mp4|mpd)
             (?:\?[^"'<>\s\\{}]+)?)
         (?:["']|(?<!;)\s|>|\\&quot;)

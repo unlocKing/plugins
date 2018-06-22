@@ -175,7 +175,7 @@ stream_data = {
     },
     "mp3": {
         "url": "http://mocked/music.mp3",
-        "name": "live",
+        "name": "vod",
         "text": ""
     },
     "mp4": {
@@ -684,6 +684,13 @@ class TestPluginResolve(unittest.TestCase):
             """,
             """
                 <img src="http://example.com/images/123.mp40-480p.jpg " />
+            """,
+            """<title>VID_12345.mp4</title>""",
+            """
+                "title":"VID_123467.mp4"
+            """,
+            """
+                title="VID_12345678.mp4"
             """,
         ]
         if not hasattr(self, 'assertNotRegex'):
