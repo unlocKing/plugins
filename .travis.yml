@@ -14,7 +14,7 @@ before_install:
   - pip install --upgrade pip setuptools
   - pip install -r requirements-dev.txt
   # only Tested with this streamlink dev version
-  - pip install -U git+https://github.com/streamlink/streamlink.git@2dca7930a938f60b48d8e23260963ea7c49d979f
+  - pip install -U git+https://github.com/streamlink/streamlink.git@aee0b9e34f2f64b118c0e7f81f7ed1be83ac06da
 
 # install:
 #  - pip install -e .

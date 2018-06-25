@@ -12,10 +12,9 @@ from streamlink.plugin.plugin import parse_url_params
 from streamlink.stream import HLSStream
 from streamlink.stream.hls import HLSStreamWorker, HLSStreamReader
 from streamlink.utils import update_scheme
+from streamlink.utils.times import hours_minutes_seconds
 
 log = logging.getLogger(__name__)
-
-_hours_minutes_seconds_re = re.compile(r'-?(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+)')
 
 
 class TempData(object):
@@ -45,28 +44,6 @@ def num(type, min=None, max=None):
     func.__name__ = type.__name__
 
     return func
-
-
-def hours_minutes_seconds(value):
-    '''
-    converts hours:minutes:seconds to seconds
-    :param value: hh:mm:ss
-    :return: seconds
-    '''
-    try:
-        return int(value)
-    except ValueError:
-        pass
-
-    match = _hours_minutes_seconds_re.match(value)
-    if not match:
-        raise ValueError
-    s = 0
-    s += int(match.group('hours')) * 60 * 60
-    s += int(match.group('minutes')) * 60
-    s += int(match.group('seconds'))
-
-    return s
 
 
 class HLSSessionHLSStreamWorker(HLSStreamWorker):
