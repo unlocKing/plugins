@@ -18,6 +18,8 @@ class TestPluginPerviyKanal(unittest.TestCase):
             "https://domashniy.ru/online",
             "https://ren.tv/live",
             "https://media.1tv.ru/embed/nmg/nmg-ren.html",
+            "https://www.5-tv.ru/live/",
+            "https://media.1tv.ru/embed/nmg/nmg-5tv.html",
         ]
 
         for url in regex_test_list:

@@ -13,14 +13,6 @@ log = logging.getLogger(__name__)
 
 
 class OneTV(Plugin):
-    '''Streamlink Plugin for Livestreams of
-        - 1tv.ru
-        - chetv.ru
-        - ctc.ru
-        - ctclove.ru
-        - domashny.ru
-        - ren.tv
-    '''
 
     API_HLS_SESSION = 'https://stream.1tv.ru/get_hls_session'
 
@@ -31,6 +23,8 @@ class OneTV(Plugin):
         'ctclove': 'ctc-love',
         'domashniy': 'ctc-dom',
         'ren': 'ren-tv',
+        '5-tv': 'tv-5',
+        '5tv': 'tv-5',
     }
 
     _session_schema = validate.Schema(
@@ -50,6 +44,8 @@ class OneTV(Plugin):
             ctc(?:love)?
             |
             domashniy
+            |
+            5-tv
             )\.ru/
                 (?:
                 embed/ctcmedia/(?P<channel>[^/?]+.).html
@@ -93,7 +89,10 @@ class OneTV(Plugin):
             channel = (match.group('domain2')
                        or match.group('channel2')
                        or match.group('domain'))
-            channel = self.channel_map[channel]
+            try:
+                channel = self.channel_map[channel]
+            except KeyError:
+                log.error('This channel is currently not supported.')
 
         cdn = random.choice(['cdn8', 'edge1', 'edge3'])
         query_e = 'e={0}'.format(int(time.time()))
