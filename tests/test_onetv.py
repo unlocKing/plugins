@@ -15,7 +15,7 @@ class TestPluginPerviyKanal(unittest.TestCase):
             "https://www.chetv.ru/online/",
             "https://www.ctc.ru/online/",
             "https://www.ctclove.ru/online/",
-            "https://www.domashny.ru/online/",
+            "https://domashniy.ru/online",
             "https://ren.tv/live",
             "https://media.1tv.ru/embed/nmg/nmg-ren.html",
         ]

@@ -29,7 +29,7 @@ class OneTV(Plugin):
         'chetv': 'ctc-che',
         'ctc': 'ctc',
         'ctclove': 'ctc-love',
-        'domashny': 'ctc-dom',
+        'domashniy': 'ctc-dom',
         'ren': 'ren-tv',
     }
 
@@ -49,7 +49,7 @@ class OneTV(Plugin):
             |
             ctc(?:love)?
             |
-            domashny
+            domashniy
             )\.ru/
                 (?:
                 embed/ctcmedia/(?P<channel>[^/?]+.).html
