@@ -2,23 +2,11 @@
 import logging
 import re
 
-from streamlink.compat import unquote
+from streamlink.compat import html_unescape, unquote
 from streamlink.plugin import Plugin
-from streamlink.plugin.api import http
-from streamlink.plugin.api import useragents
-from streamlink.plugin.api import validate
-from streamlink.stream import HLSStream
-from streamlink.stream import HTTPStream
-from streamlink.stream import RTMPStream
+from streamlink.plugin.api import http, useragents, validate
+from streamlink.stream import HLSStream, HTTPStream, RTMPStream
 from streamlink.utils import parse_json
-
-try:
-    # python 3.4+
-    from html import unescape as compat_unescape
-except ImportError:
-    # python 2.7
-    from HTMLParser import HTMLParser
-    compat_unescape = HTMLParser().unescape
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +40,7 @@ class OK_live(Plugin):
         validate.all(
             validate.transform(_data_re.search),
             validate.get('data'),
-            validate.transform(compat_unescape),
+            validate.transform(html_unescape),
             validate.transform(parse_json),
             validate.get('flashvars'),
             validate.any(
@@ -89,7 +77,7 @@ class OK_live(Plugin):
     def stream_weight(cls, key):
         weight = cls.QUALITY_WEIGHTS.get(key)
         if weight:
-            return weight, 'okru'
+            return weight, 'ok_live'
 
         return Plugin.stream_weight(key)
 
@@ -100,11 +88,12 @@ class OK_live(Plugin):
             'User-Agent': useragents.FIREFOX,
             'Referer': self.url
         }
-        data = http.get(self.url, headers=headers, schema=self._data_schema)
+        http.headers.update(headers)
+        data = http.get(self.url, schema=self._data_schema)
         metadata = data.get('metadata')
         metadata_url = data.get('metadataUrl')
         if metadata_url:
-            metadata = http.post(metadata_url, headers=headers, schema=self._metadata_schema)
+            metadata = http.post(metadata_url, schema=self._metadata_schema)
 
         if metadata:
             list_hls = [
@@ -113,17 +102,21 @@ class OK_live(Plugin):
             ]
             for hls_url in list_hls:
                 if hls_url is not None:
-                    for s in HLSStream.parse_variant_playlist(self.session, hls_url, headers=headers).items():
+                    for s in HLSStream.parse_variant_playlist(self.session, hls_url).items():
                         yield s
 
             if metadata.get('videos'):
-                for http_stream in metadata.get('videos'):
+                for http_stream in metadata['videos']:
                     http_name = http_stream['name']
                     http_url = http_stream['url']
-                    yield http_name, HTTPStream(self.session, http_url, headers=headers)
+                    try:
+                        http_name = '{0}p'.format(self.QUALITY_WEIGHTS[http_name])
+                    except KeyError:
+                        pass
+                    yield http_name, HTTPStream(self.session, http_url)
 
             if metadata.get('rtmpUrl'):
-                yield 'live', RTMPStream(self.session, params={'rtmp': metadata.get('rtmpUrl')})
+                yield 'live', RTMPStream(self.session, params={'rtmp': metadata['rtmpUrl']})
 
 
 __plugin__ = OK_live
