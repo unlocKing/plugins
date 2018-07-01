@@ -120,6 +120,7 @@ class Resolve(Plugin):
         '.vtt',
         '/chat.html',
         '/chat',
+        '/vidthumb.mp4',
     )
     # Not allowed at the end of the parsed url netloc
     blacklist_netloc = (
