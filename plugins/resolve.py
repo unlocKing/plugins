@@ -617,20 +617,18 @@ class Resolve(Plugin):
             'bigo.tv',
         ]
 
-        if not http.headers['User-Agent'].startswith('python-requests'):
-            return
-
-        if o.netloc.endswith(tuple(_android)):
-            http.headers.update({'User-Agent': useragents.ANDROID})
-        elif o.netloc.endswith(tuple(_chrome)):
-            http.headers.update({'User-Agent': useragents.CHROME})
-        elif o.netloc.endswith(tuple(_ipad)):
-            http.headers.update({'User-Agent': useragents.IPAD})
-        elif o.netloc.endswith(tuple(_iphone)):
-            http.headers.update({'User-Agent': useragents.IPHONE_6})
-        else:
-            # default User-Agent
-            http.headers.update({'User-Agent': useragents.FIREFOX})
+        if http.headers['User-Agent'].startswith('python-requests'):
+            if o.netloc.endswith(tuple(_android)):
+                http.headers.update({'User-Agent': useragents.ANDROID})
+            elif o.netloc.endswith(tuple(_chrome)):
+                http.headers.update({'User-Agent': useragents.CHROME})
+            elif o.netloc.endswith(tuple(_ipad)):
+                http.headers.update({'User-Agent': useragents.IPAD})
+            elif o.netloc.endswith(tuple(_iphone)):
+                http.headers.update({'User-Agent': useragents.IPHONE_6})
+            else:
+                # default User-Agent
+                http.headers.update({'User-Agent': useragents.FIREFOX})
 
         # SSL Verification - http.verify
         http_verify = [
