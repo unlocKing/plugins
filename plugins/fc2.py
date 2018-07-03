@@ -184,6 +184,11 @@ class FC2(Plugin):
                 elif data['name'] == 'media_connection':
                     log.debug('successfully opened stream')
                 elif data['name'] == 'control_disconnection':
+                    if self.count <= 30:
+                        # User with points restricted program being broadcasted
+                        self.count = 30
+                    if data.get('arguments').get('code') == 4512:
+                        log.debug('Disconnected from Server')
                     break
                 elif data['name'] == 'publish_stop':
                     log.debug('Stream ended')
@@ -192,6 +197,13 @@ class FC2(Plugin):
                         log.error('Stream requires a fee now.'.format(
                             data['arguments'].get('fee')))
                         break
+                elif data['name'] == 'media_disconnection':
+                    if data.get('arguments').get('code') == 104:
+                        log.warning('Disconnected. '
+                                    'Multiple connections has been detected.')
+                    elif data.get('arguments').get('code'):
+                        log.debug('error code {0}'.format(
+                            data['arguments']['code']))
 
             ws.close()
 
@@ -207,8 +219,10 @@ class FC2(Plugin):
             if self.host_found is True:
                 break
             if self.count >= 30:
-                host_timeout = False
+                host_timeout = True
+                break
 
+        log.debug('host_timeout is {0}'.format(host_timeout))
         if host_timeout:
             return False
         return True
@@ -245,6 +259,7 @@ class FC2(Plugin):
         return (count == len(required_cookies))
 
     def _get_streams(self):
+        log.info('Version 2018-07-03')
         log.info('This is a custom plugin. '
                  'For support visit https://github.com/back-to/plugins')
 
