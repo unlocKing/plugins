@@ -259,7 +259,7 @@ class FC2(Plugin):
         return (count == len(required_cookies))
 
     def _get_streams(self):
-        log.info('Version 2018-07-03')
+        log.debug('Version 2018-07-03')
         log.info('This is a custom plugin. '
                  'For support visit https://github.com/back-to/plugins')
 

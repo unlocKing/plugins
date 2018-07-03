@@ -35,6 +35,7 @@ class BalticLivecam(Plugin):
 
     def _get_streams(self):
         http.headers.update({'User-Agent': useragents.FIREFOX})
+        log.debug('Version 2018-07-01')
         log.info('This is a custom plugin. '
                  'For support visit https://github.com/back-to/plugins')
         res = http.get(self.url)

@@ -648,6 +648,7 @@ class Resolve(Plugin):
         self.settings_url()
 
         if self._run <= 1:
+            log.debug('Version 2018-07-01')
             log.info('This is a custom plugin. '
                      'For support visit https://github.com/back-to/plugins')
             log.debug('User-Agent: {0}'.format(http.headers['User-Agent']))

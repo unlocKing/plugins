@@ -82,6 +82,7 @@ class OK_live(Plugin):
         return Plugin.stream_weight(key)
 
     def _get_streams(self):
+        log.debug('Version 2018-07-01')
         log.info('This is a custom plugin. '
                  'For support visit https://github.com/back-to/plugins')
         headers = {

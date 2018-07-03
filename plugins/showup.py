@@ -61,6 +61,9 @@ class ShowUp(Plugin):
             return 'ws://%s' % ws_url.group("ws")
 
     def _get_streams(self):
+        log.debug('Version 2018-07-01')
+        log.info('This is a custom plugin. '
+                 'For support visit https://github.com/back-to/plugins')
         url_match = _url_re.match(self.url)
         channel = url_match.group('channel')
         log.debug('Channel name: {0}'.format(channel))
